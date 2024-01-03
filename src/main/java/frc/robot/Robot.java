@@ -109,8 +109,9 @@ public class Robot extends TimedRobot {
     configureBindings();
 
     // Start auto selector
+    autoCommand = autos.getSelector().getSelected();
     autos.getSelector().onChange((command) -> autoCommand = command);
-    Shuffleboard.getTab("Auto").add("Auto selector", autos.getSelector()).withSize(3, 1);
+    Shuffleboard.getTab("Auto").add("Auto selector", autos.getSelector());
   }
 
   @Override

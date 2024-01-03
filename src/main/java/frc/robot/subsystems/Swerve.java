@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.PrintCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kOI;
 import frc.robot.Constants.kSwerve;
@@ -85,6 +85,32 @@ public class Swerve extends SubsystemBase {
   private Rotation2d gyroOffset = new Rotation2d();
   private ChassisSpeeds chassisVelocity = new ChassisSpeeds();
 
+  public class SwerveState {
+    public enum Mode {
+      DRIVE,
+      HEADING_LOCK,
+      POINT_OF_INTEREST,
+      AUTO_DRIVE,
+      PARK,
+      IDLE
+    }
+
+    public Mode mode;
+    public boolean boosting;
+
+    public SwerveState() {
+      mode = Mode.IDLE;
+      boosting = false;
+    }
+
+    public void set(Mode mode, boolean boosting) {
+      this.mode = mode;
+      this.boosting = boosting;
+    }
+  }
+
+  private SwerveState swerveState = new SwerveState();
+
   // Logging
   private final Field2d field2d = new Field2d();
   private final FieldObject2d autonRobot = field2d.getObject("Autonomous Pose");
@@ -137,15 +163,19 @@ public class Swerve extends SubsystemBase {
       DoubleSupplier zRotation,
       BooleanSupplier boost) {
     return this.run(
-        () ->
-            drive(
-                fieldToRobotSpeeds(
-                    joystickToChassis(
-                        xTranslation.getAsDouble(),
-                        yTranslation.getAsDouble(),
-                        zRotation.getAsDouble(),
-                        boost.getAsBoolean())),
-                kSwerve.Teleop.closedLoop));
+            () -> {
+              drive(
+                  fieldToRobotSpeeds(
+                      joystickToChassis(
+                          xTranslation.getAsDouble(),
+                          yTranslation.getAsDouble(),
+                          zRotation.getAsDouble(),
+                          boost.getAsBoolean())),
+                  kSwerve.Teleop.closedLoop);
+              swerveState.set(SwerveState.Mode.DRIVE, boost.getAsBoolean());
+            })
+        .finallyDo(() -> swerveState.set(SwerveState.Mode.IDLE, false))
+        .withName("telopDriveCommand");
   }
 
   // Returns a command that locks onto the provided heading while translation is driver controlled
@@ -164,7 +194,6 @@ public class Swerve extends SubsystemBase {
     headingController.enableContinuousInput(0, 2 * Math.PI);
 
     return this.runOnce(() -> headingController.reset(getGyro().getRadians(), getGyroYawRate()))
-        .andThen(new PrintCommand("Started lock command at angle " + heading.getRadians()))
         .andThen(
             this.run(
                 () -> {
@@ -178,7 +207,10 @@ public class Swerve extends SubsystemBase {
                       headingController.calculate(
                           getPose().getRotation().getRadians(), heading.getRadians());
                   drive(fieldToRobotSpeeds(speeds), false);
-                }));
+                  swerveState.set(SwerveState.Mode.HEADING_LOCK, boost.getAsBoolean());
+                }))
+        .finallyDo(() -> swerveState.set(SwerveState.Mode.IDLE, false))
+        .withName("teleopLockHeadingCommand");
   }
 
   // Returns a command that controls the heading to face a given point on the field while tranlation
@@ -217,62 +249,79 @@ public class Swerve extends SubsystemBase {
                               .plus(Rotation2d.fromDegrees(180))
                               .getRadians());
                   drive(fieldToRobotSpeeds(speeds), false);
-                }));
+                  swerveState.set(SwerveState.Mode.POINT_OF_INTEREST, boost.getAsBoolean());
+                }))
+        .finallyDo(() -> swerveState.set(SwerveState.Mode.IDLE, false))
+        .withName("teleopFocusPointCommand");
   }
 
   // ---------- Autonomous Commands ----------
 
   // Follow a PathPlanner path
   public Command followPathCommand(PathPlannerPath path) {
-    return new FollowPathHolonomic(
-        path,
-        this::getPose,
-        this::getChassisSpeeds,
-        (speeds) -> drive(speeds, true),
-        Auton.pathFollowConfig,
-        this);
+    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
+        .andThen(
+            new FollowPathHolonomic(
+                path,
+                this::getPose,
+                this::getChassisSpeeds,
+                (speeds) -> drive(speeds, true),
+                Auton.pathFollowConfig,
+                this))
+        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
+        .withName("followPathCommand");
   }
 
   // Follow a PathPlanner path and trigger commands passed in the event map at event markers
   public Command followPathWithEventsCommand(PathPlannerPath path) {
-    return new FollowPathWithEvents(followPathCommand(path), path, this::getPose);
+    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
+        .andThen(new FollowPathWithEvents(followPathCommand(path), path, this::getPose))
+        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
+        .withName("followPathWithEventsCommand");
   }
 
   // Generate an on-the-fly path to reach a certain pose
   public Command driveToPointCommand(Pose2d goalPose) {
-    return driveToPoint(goalPose, goalPose.getRotation());
+    return driveToPoint(goalPose, goalPose.getRotation()).withName("driveToPointCommand");
   }
 
   // Generate an on-the-fly path to reach a certain pose with a given holonomic rotation
   public Command driveToPoint(Pose2d goalPose, Rotation2d holonomicRotation) {
-    return this.defer(
-        () ->
-            followPathCommand(
-                new PathPlannerPath(
-                    PathPlannerPath.bezierFromPoses(getPose(), goalPose),
-                    new PathConstraints(
-                        kSwerve.Auton.maxVel,
-                        kSwerve.Auton.maxAccel,
-                        kSwerve.Auton.maxAngVel,
-                        kSwerve.maxAngAccel),
-                    new GoalEndState(0.0, holonomicRotation))));
+    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
+        .andThen(
+            this.defer(
+                () ->
+                    followPathCommand(
+                        new PathPlannerPath(
+                            PathPlannerPath.bezierFromPoses(getPose(), goalPose),
+                            new PathConstraints(
+                                kSwerve.Auton.maxVel,
+                                kSwerve.Auton.maxAccel,
+                                kSwerve.Auton.maxAngVel,
+                                kSwerve.maxAngAccel),
+                            new GoalEndState(0.0, holonomicRotation)))))
+        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
+        .withName("driveToPoint");
   }
 
   // ---------- Other commands ----------
 
   // Put wheels into x configuration
   public Command xSwerveCommand() {
-    return this.startEnd(this::xSwerve, () -> {});
+    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.PARK)
+        .andThen(this.startEnd(this::xSwerve, () -> {}))
+        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
+        .withName("xSwerveCommand");
   }
 
   // Zero the gyro
   public Command zeroGyroCommand() {
-    return this.runOnce(this::zeroGyro);
+    return Commands.runOnce(this::zeroGyro).withName("zeroGyroCommand");
   }
 
   // Reset the gyro with pose estimation (don't use without vision)
   public Command resetGyroCommand() {
-    return this.runOnce(this::matchGyroToPose);
+    return Commands.runOnce(this::matchGyroToPose).withName("resetGyroCommand");
   }
 
   // ---------- Public interface methods ----------
@@ -334,6 +383,10 @@ public class Swerve extends SubsystemBase {
   // Get gyro yaw rate (radians/s CCW +)
   public double getGyroYawRate() {
     return Units.degreesToRadians(-navX.getRate());
+  }
+
+  public SwerveState getSwerveState() {
+    return swerveState;
   }
 
   // ---------- Private hardware interface methods ----------

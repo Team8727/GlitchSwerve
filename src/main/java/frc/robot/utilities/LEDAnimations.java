@@ -21,7 +21,7 @@ public class LEDAnimations {
 
   // Alternate colors up the strip
   public void alternate(LEDSubStrip section, Color color1, Color color2) {
-    for (int i = 0; i <= section.getLength(); i++) {
+    for (int i = 0; i < section.getLength(); i++) {
       if (i % 2 == 0) {
         section.setLED(i, color1);
 
@@ -33,7 +33,7 @@ public class LEDAnimations {
 
   // Flash a color on and off
   public void flashing(LEDSubStrip section, Color color, int interval) {
-    for (int i = 0; i <= section.getLength(); i++) {
+    for (int i = 0; i < section.getLength(); i++) {
       if ((count % (2 * interval) < interval)) {
         section.setLED(i, color);
       } else {

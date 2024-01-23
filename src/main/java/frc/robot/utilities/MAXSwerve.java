@@ -1,5 +1,7 @@
 package frc.robot.utilities;
 
+import static frc.robot.utilities.SparkConfigurator.*;
+
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -8,6 +10,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkPIDController;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -17,6 +20,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants.kSwerve.kModule;
+import java.util.Set;
 
 public class MAXSwerve {
   private SwerveModuleState targetState = new SwerveModuleState();
@@ -50,8 +54,20 @@ public class MAXSwerve {
     chassisOffset = offset;
 
     // Initialize hardware
-    driveNEO = new CANSparkMax(driveCANId, MotorType.kBrushless);
-    steerNEO = new CANSparkMax(steerCANId, MotorType.kBrushless);
+    driveNEO =
+        getSparkMax(
+            driveCANId,
+            MotorType.kBrushless,
+            false,
+            Set.of(Sensors.INTEGRATED),
+            Set.of(LogData.VOLTAGE, LogData.POSITION, LogData.VELOCITY));
+    steerNEO =
+        getSparkMax(
+            steerCANId,
+            MotorType.kBrushless,
+            false,
+            Set.of(Sensors.ABSOLUTE),
+            Set.of(LogData.VOLTAGE, LogData.POSITION));
 
     driveEncoder = driveNEO.getEncoder();
     steerEncoder = steerNEO.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
@@ -210,7 +226,7 @@ public class MAXSwerve {
     goalVelPub.set(targetState.speedMetersPerSecond);
     goalHeadingPub.set(targetState.angle.getRadians());
     measVelPub.set(driveEncoder.getVelocity());
-    measHeadingPub.set(getCorrectedSteer().getRadians());
+    measHeadingPub.set(MathUtil.angleModulus(getCorrectedSteer().getRadians()));
     voltagesPub.set(
         new double[] {
           driveNEO.getAppliedOutput() * driveNEO.getBusVoltage(),

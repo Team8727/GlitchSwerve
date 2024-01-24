@@ -67,7 +67,7 @@ public class MAXSwerve {
             MotorType.kBrushless,
             false,
             Set.of(Sensors.ABSOLUTE),
-            Set.of(LogData.VOLTAGE, LogData.POSITION));
+            Set.of(LogData.VOLTAGE, LogData.POSITION, LogData.VELOCITY));
 
     driveEncoder = driveNEO.getEncoder();
     steerEncoder = steerNEO.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);

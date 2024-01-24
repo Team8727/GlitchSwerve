@@ -161,8 +161,8 @@ public class Swerve extends SubsystemBase {
                 // apply the voltage
                 frontLeft.setRawDriveVoltage(volts.magnitude());
                 backLeft.setRawDriveVoltage(volts.magnitude());
-                frontRight.setRawDriveVoltage(-volts.magnitude());
-                backRight.setRawDriveVoltage(-volts.magnitude());
+                frontRight.setRawDriveVoltage(volts.magnitude());
+                backRight.setRawDriveVoltage(volts.magnitude());
               },
               (log) -> {
                 log.motor("frontLeft")
@@ -210,8 +210,8 @@ public class Swerve extends SubsystemBase {
                 // apply the voltage
                 frontLeft.setRawDriveVoltage(volts.magnitude());
                 backLeft.setRawDriveVoltage(volts.magnitude());
-                frontRight.setRawDriveVoltage(-volts.magnitude());
-                backRight.setRawDriveVoltage(-volts.magnitude());
+                frontRight.setRawDriveVoltage(volts.magnitude());
+                backRight.setRawDriveVoltage(volts.magnitude());
               },
               (log) -> {
                 log.motor("frontLeft")

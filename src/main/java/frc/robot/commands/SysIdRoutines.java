@@ -12,7 +12,6 @@ import java.util.Map;
 
 public class SysIdRoutines {
 
-  @SuppressWarnings("unused")
   private final Swerve swerve;
 
   // Hashmaps for both storing routines and for the selector

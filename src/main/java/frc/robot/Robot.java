@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
@@ -21,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Set;
 
 public class Robot extends TimedRobot {
   private CommandXboxController driverController = new CommandXboxController(0);
@@ -43,7 +45,9 @@ public class Robot extends TimedRobot {
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
 
     // SysId
-    driverController.x().whileTrue(sysIdRoutines.getSelector().getSelected());
+    driverController
+        .x()
+        .whileTrue(Commands.defer(() -> sysIdRoutines.getSelector().getSelected(), Set.of(swerve)));
   }
 
   @Override

@@ -450,10 +450,11 @@ public class Swerve extends SubsystemBase {
   }
 
   // ---------- SysId Commands ----------
-  public SysIdRoutine getLinearRoutine(){
+  public SysIdRoutine getLinearRoutine() {
     return linearRoutine;
   }
-  public SysIdRoutine getAngularRoutine(){
+
+  public SysIdRoutine getAngularRoutine() {
     return angularRoutine;
   }
 

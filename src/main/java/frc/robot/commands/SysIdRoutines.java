@@ -15,7 +15,7 @@ public class SysIdRoutines {
   @SuppressWarnings("unused")
   private final Swerve swerve;
 
-  //Hashmaps for both storing routines and for the selector
+  // Hashmaps for both storing routines and for the selector
   private final LinkedHashMap<String, Command> routines = new LinkedHashMap<String, Command>();
   private final SendableChooser<Command> selector = new SendableChooser<Command>();
 
@@ -26,7 +26,7 @@ public class SysIdRoutines {
     populateSendable();
   }
 
-  //Command Methods that return either a quasistatic or dynamic routine for the SysIdProcess
+  // Command Methods that return either a quasistatic or dynamic routine for the SysIdProcess
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction, kSwerve.sysIdType type) {
     if (type == kSwerve.sysIdType.ANGULAR) {
       return swerve.getAngularRoutine().quasistatic(direction);
@@ -43,20 +43,30 @@ public class SysIdRoutines {
     }
   }
 
-  //Loads all necessary routine permutations into a Hashmap
+  // Loads all necessary routine permutations into a Hashmap
   private void loadRoutines() {
     routines.put("No Routine", Commands.waitSeconds(100));
 
-    //Linear Routines
-    routines.put("linearForwardQuasistatic", sysIdQuasistatic(Direction.kForward, kSwerve.sysIdType.LINEAR));
-    routines.put("linearReverseQuasistatic", sysIdQuasistatic(Direction.kReverse, kSwerve.sysIdType.LINEAR));
-    routines.put("linearForwardDynamic", sysIdDynamic(Direction.kForward, kSwerve.sysIdType.LINEAR));
-    routines.put("linearReverseDynamic", sysIdDynamic(Direction.kReverse, kSwerve.sysIdType.LINEAR));
-    //Angular Routines
-    routines.put("angularForwardQuasistatic", sysIdQuasistatic(Direction.kForward, kSwerve.sysIdType.ANGULAR));
-    routines.put("angularReverseQuasistatic", sysIdQuasistatic(Direction.kReverse, kSwerve.sysIdType.ANGULAR));
-    routines.put("angularForwardDynamic", sysIdDynamic(Direction.kForward, kSwerve.sysIdType.ANGULAR));
-    routines.put("angularReverseDynamic", sysIdDynamic(Direction.kReverse, kSwerve.sysIdType.ANGULAR));
+    // Linear Routines
+    routines.put(
+        "linearForwardQuasistatic", sysIdQuasistatic(Direction.kForward, kSwerve.sysIdType.LINEAR));
+    routines.put(
+        "linearReverseQuasistatic", sysIdQuasistatic(Direction.kReverse, kSwerve.sysIdType.LINEAR));
+    routines.put(
+        "linearForwardDynamic", sysIdDynamic(Direction.kForward, kSwerve.sysIdType.LINEAR));
+    routines.put(
+        "linearReverseDynamic", sysIdDynamic(Direction.kReverse, kSwerve.sysIdType.LINEAR));
+    // Angular Routines
+    routines.put(
+        "angularForwardQuasistatic",
+        sysIdQuasistatic(Direction.kForward, kSwerve.sysIdType.ANGULAR));
+    routines.put(
+        "angularReverseQuasistatic",
+        sysIdQuasistatic(Direction.kReverse, kSwerve.sysIdType.ANGULAR));
+    routines.put(
+        "angularForwardDynamic", sysIdDynamic(Direction.kForward, kSwerve.sysIdType.ANGULAR));
+    routines.put(
+        "angularReverseDynamic", sysIdDynamic(Direction.kReverse, kSwerve.sysIdType.ANGULAR));
   }
 
   // Adds all the Commands to the sendable chooser

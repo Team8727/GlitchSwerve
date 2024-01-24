@@ -15,8 +15,8 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
-import frc.robot.subsystems.Swerve;
 import frc.robot.commands.SysIdRoutines;
+import frc.robot.subsystems.Swerve;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -42,10 +42,8 @@ public class Robot extends TimedRobot {
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
 
-    // SysId 
-    driverController
-        .x()
-        .whileTrue(sysIdRoutines.getSelector().getSelected());
+    // SysId
+    driverController.x().whileTrue(sysIdRoutines.getSelector().getSelected());
   }
 
   @Override

@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj.SPI.Port;
 
 public class Constants {
   public static SimMode simMode = SimMode.DESKTOP;
+  public static boolean logFileOnly = false;
+  public static boolean logLazy = true;
 
   // Operator interface constants
   public static class kOI {

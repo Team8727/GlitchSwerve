@@ -23,8 +23,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Set;
+import monologue.Logged;
+import monologue.Monologue;
 
-public class Robot extends TimedRobot {
+public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
   private Swerve swerve = new Swerve();
   private AutoRoutines autos = new AutoRoutines(swerve);
@@ -78,6 +80,10 @@ public class Robot extends TimedRobot {
 
     DriverStation.startDataLog(DataLogManager.getLog());
     if (Robot.isSimulation()) DataLogManager.log("Simmode is " + Constants.simMode);
+
+    // Start Monologue
+    Monologue.setupMonologue(this, "System", Constants.logFileOnly, Constants.logLazy);
+    Monologue.setFileOnly(DriverStation.isFMSAttached() ? true : Constants.logFileOnly);
 
     // Configure command bindings
     configureBindings();

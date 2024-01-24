@@ -97,8 +97,8 @@ public class Constants {
 
       // Controls Constants
       public static class kDrive {
-        public static final double kP = 0.1;
-        public static final double kD = 0;
+        public static final double kP = 0.2;
+        public static final double kD = 0.05;
         public static final double kS = 0.068841;
         public static final double kV = 2.4568;
         public static final double kA = 0.22524;
@@ -107,7 +107,7 @@ public class Constants {
       }
 
       public static class kSteer {
-        public static final double kP = 1;
+        public static final double kP = 3;
         public static final double kD = 0;
         public static final double minOutput = -1;
         public static final double maxOutput = 1;

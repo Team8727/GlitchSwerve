@@ -148,7 +148,7 @@ public class Swerve extends SubsystemBase {
   // Mutable holder for unit-safe linear velocity values, persisted to avoid reallocation.
   private final MutableMeasure<Velocity<Distance>> m_velocity = mutable(MetersPerSecond.of(0));
 
-  SysIdRoutine linearRoutine =
+  private final SysIdRoutine linearRoutine =
       new SysIdRoutine(
           new SysIdRoutine.Config(),
           new SysIdRoutine.Mechanism(
@@ -197,7 +197,7 @@ public class Swerve extends SubsystemBase {
               },
               this));
 
-  SysIdRoutine angularRoutine =
+  private final SysIdRoutine angularRoutine =
       new SysIdRoutine(
           new SysIdRoutine.Config(),
           new SysIdRoutine.Mechanism(
@@ -450,20 +450,11 @@ public class Swerve extends SubsystemBase {
   }
 
   // ---------- SysId Commands ----------
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction, kSwerve.sysIdType type) {
-    if (type == kSwerve.sysIdType.ANGULAR) {
-      return angularRoutine.quasistatic(direction);
-    } else {
-      return linearRoutine.quasistatic(direction);
-    }
+  public SysIdRoutine getLinearRoutine(){
+    return linearRoutine;
   }
-
-  public Command sysIdDynamic(SysIdRoutine.Direction direction, kSwerve.sysIdType type) {
-    if (type == kSwerve.sysIdType.ANGULAR) {
-      return angularRoutine.dynamic(direction);
-    } else {
-      return linearRoutine.dynamic(direction);
-    }
+  public SysIdRoutine getAngularRoutine(){
+    return angularRoutine;
   }
 
   // ---------- Public interface methods ----------

@@ -10,19 +10,17 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkPIDController;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants.kSwerve.kModule;
 import java.util.Set;
+import monologue.Annotations.Log;
+import monologue.Logged;
 
-public class MAXSwerve {
+public class MAXSwerve implements Logged {
   private SwerveModuleState targetState = new SwerveModuleState();
   private final double chassisOffset;
 
@@ -36,21 +34,12 @@ public class MAXSwerve {
   // Controls
   private final SparkPIDController drivePID;
   private final SparkPIDController steerPID;
-
   private final SimpleMotorFeedforward driveFF;
-
-  // Logging
-  private final NetworkTable moduleTable;
-  private final DoublePublisher goalVelPub;
-  private final DoublePublisher goalHeadingPub;
-  private final DoublePublisher measVelPub;
-  private final DoublePublisher measHeadingPub;
-  private final DoubleArrayPublisher voltagesPub;
 
   // Simulation
   private double simDrivePosition = 0;
 
-  public MAXSwerve(int driveCANId, int steerCANId, double offset, NetworkTable table) {
+  public MAXSwerve(int driveCANId, int steerCANId, double offset) {
     chassisOffset = offset;
 
     // Initialize hardware
@@ -114,14 +103,6 @@ public class MAXSwerve {
     steerNEO.burnFlash();
 
     if (!RobotBase.isReal()) targetState.angle = new Rotation2d(steerEncoder.getPosition());
-
-    // Start NT publishers for logging
-    moduleTable = table;
-    goalVelPub = moduleTable.getDoubleTopic("Goal Velocity").publish();
-    goalHeadingPub = moduleTable.getDoubleTopic("Goal Heading").publish();
-    measVelPub = moduleTable.getDoubleTopic("Measured Velocity").publish();
-    measHeadingPub = moduleTable.getDoubleTopic("Measured Heading").publish();
-    voltagesPub = moduleTable.getDoubleArrayTopic("Voltages").publish();
   }
 
   // Get the corrected (for chassis offset) heading
@@ -131,17 +112,20 @@ public class MAXSwerve {
   }
 
   // Get the state of the module (vel, heading)
+  @Log.File
   public SwerveModuleState getState() {
     if (RobotBase.isSimulation()) return targetState;
     return new SwerveModuleState(driveEncoder.getVelocity(), getCorrectedSteer());
   }
 
   // Get the targeted state of the module (vel, heading)
+  @Log.NT
   public SwerveModuleState getTargetState() {
     return targetState;
   }
 
   // Get the position of the module (wheel distance traveled, heading)
+  @Log.NT
   public SwerveModulePosition getPositon() {
     if (RobotBase.isSimulation())
       return new SwerveModulePosition(simDrivePosition, getCorrectedSteer());
@@ -149,6 +133,7 @@ public class MAXSwerve {
   }
 
   // Get the error of the heading
+  @Log.File
   public Rotation2d getHeadingError() {
     return targetState.angle.minus(getCorrectedSteer());
   }
@@ -214,6 +199,7 @@ public class MAXSwerve {
 
   // Put the drive motors into or out of brake mode
   public void setBrakeMode(boolean brake) {
+    this.log("Brake mode", brake);
     if (brake) {
       driveNEO.setIdleMode(IdleMode.kBrake);
     } else {
@@ -221,16 +207,12 @@ public class MAXSwerve {
     }
   }
 
-  // Update the logging values in NT
-  public void updateNT() {
-    goalVelPub.set(targetState.speedMetersPerSecond);
-    goalHeadingPub.set(targetState.angle.getRadians());
-    measVelPub.set(driveEncoder.getVelocity());
-    measHeadingPub.set(MathUtil.angleModulus(getCorrectedSteer().getRadians()));
-    voltagesPub.set(
-        new double[] {
-          driveNEO.getAppliedOutput() * driveNEO.getBusVoltage(),
-          steerNEO.getAppliedOutput() * steerNEO.getBusVoltage()
-        });
+  // Get the output voltages
+  @Log.NT
+  public double[] getVoltages() {
+    return new double[] {
+      driveNEO.getAppliedOutput() * driveNEO.getBusVoltage(),
+      steerNEO.getAppliedOutput() * steerNEO.getBusVoltage()
+    };
   }
 }

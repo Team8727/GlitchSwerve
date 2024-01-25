@@ -24,22 +24,16 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
-import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -51,50 +45,34 @@ import frc.robot.utilities.ChassisLimiter;
 import frc.robot.utilities.MAXSwerve;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import monologue.Annotations.Log;
+import monologue.Logged;
 
-public class Swerve extends SubsystemBase {
-  // NT Objects
-  NetworkTableInstance ntInst = NetworkTableInstance.getDefault();
-  NetworkTable ntTable = ntInst.getTable("system/drivetrain");
-  NetworkTable modulesTable = ntTable.getSubTable("modules");
-  NetworkTable poseTable = ntTable.getSubTable("pose");
-
+public class Swerve extends SubsystemBase implements Logged {
   // Hardware
-  private final MAXSwerve frontLeft =
+  private final MAXSwerve frontLeftModule =
       new MAXSwerve(
-          kSwerve.CANID.frontLeftDrive,
-          kSwerve.CANID.frontLeftSteer,
-          kSwerve.Offsets.frontLeft,
-          modulesTable.getSubTable("FrontLeft"));
+          kSwerve.CANID.frontLeftDrive, kSwerve.CANID.frontLeftSteer, kSwerve.Offsets.frontLeft);
 
-  private final MAXSwerve backLeft =
+  private final MAXSwerve backLeftModule =
       new MAXSwerve(
-          kSwerve.CANID.backLeftDrive,
-          kSwerve.CANID.backLeftSteer,
-          kSwerve.Offsets.backLeft,
-          modulesTable.getSubTable("BackLeft"));
+          kSwerve.CANID.backLeftDrive, kSwerve.CANID.backLeftSteer, kSwerve.Offsets.backLeft);
 
-  private final MAXSwerve backRight =
+  private final MAXSwerve backRightModule =
       new MAXSwerve(
-          kSwerve.CANID.backRightDrive,
-          kSwerve.CANID.backRightSteer,
-          kSwerve.Offsets.backRight,
-          modulesTable.getSubTable("BackRight"));
+          kSwerve.CANID.backRightDrive, kSwerve.CANID.backRightSteer, kSwerve.Offsets.backRight);
 
-  private final MAXSwerve frontRight =
+  private final MAXSwerve frontRightModule =
       new MAXSwerve(
-          kSwerve.CANID.frontRightDrive,
-          kSwerve.CANID.frontRightSteer,
-          kSwerve.Offsets.frontRight,
-          modulesTable.getSubTable("FrontRight"));
+          kSwerve.CANID.frontRightDrive, kSwerve.CANID.frontRightSteer, kSwerve.Offsets.frontRight);
 
   private final AHRS navX = new AHRS(kSwerve.navxPort);
 
   // Controls objects
   private final SwerveDrivePoseEstimator poseEstimator;
   private final ChassisLimiter limiter;
-  private Rotation2d gyroOffset = new Rotation2d();
-  private ChassisSpeeds chassisVelocity = new ChassisSpeeds();
+  @Log.File private Rotation2d gyroOffset = new Rotation2d();
+  @Log.NT private ChassisSpeeds chassisVelocityTarget = new ChassisSpeeds();
 
   public class SwerveState {
     public enum Mode {
@@ -123,18 +101,9 @@ public class Swerve extends SubsystemBase {
   private SwerveState swerveState = new SwerveState();
 
   // Logging
-  private final Field2d field2d = new Field2d();
+  @Log.NT private final Field2d field2d = new Field2d();
   private final FieldObject2d autonRobot = field2d.getObject("Autonomous Pose");
   private final FieldObject2d autonPath = field2d.getObject("Autonomous Path");
-  private final DoublePublisher rawGyroPub = ntTable.getDoubleTopic("Raw Gyro").publish();
-  private final DoublePublisher offsetGyroPub = ntTable.getDoubleTopic("Offset Gyro").publish();
-  private final DoublePublisher gyroRate = ntTable.getDoubleTopic("Gyro rate").publish();
-  private final DoubleArrayPublisher chassisVelPub =
-      ntTable.getDoubleArrayTopic("Commanded Chassis Velocity").publish();
-  private final DoubleArrayPublisher measuredVelPub =
-      ntTable.getDoubleArrayTopic("Actual Chassis Velocity").publish();
-  private final DoubleArrayPublisher swerveStatesPub =
-      ntTable.getDoubleArrayTopic("Swerve Module States").publish();
 
   // Simulation
   private final SimDeviceSim simNavX = new SimDeviceSim("navX-Sensor", 0);
@@ -154,46 +123,53 @@ public class Swerve extends SubsystemBase {
           new SysIdRoutine.Mechanism(
               (volts) -> {
                 // Set all the wheels to one direction
-                frontLeft.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                backLeft.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                frontRight.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                backRight.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
+                frontLeftModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
+                backLeftModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
+                frontRightModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
+                backRightModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
                 // apply the voltage
-                frontLeft.setRawDriveVoltage(volts.magnitude());
-                backLeft.setRawDriveVoltage(volts.magnitude());
-                frontRight.setRawDriveVoltage(volts.magnitude());
-                backRight.setRawDriveVoltage(volts.magnitude());
+                frontLeftModule.setRawDriveVoltage(volts.magnitude());
+                backLeftModule.setRawDriveVoltage(volts.magnitude());
+                frontRightModule.setRawDriveVoltage(volts.magnitude());
+                backRightModule.setRawDriveVoltage(volts.magnitude());
               },
               (log) -> {
                 log.motor("frontLeft")
-                    .voltage(m_appliedVoltage.mut_replace(frontLeft.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            frontLeftModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(frontLeft.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(frontLeftModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            frontLeft.getState().speedMetersPerSecond, MetersPerSecond));
+                            frontLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("backLeft")
-                    .voltage(m_appliedVoltage.mut_replace(backLeft.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(backLeftModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(backLeft.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(backLeftModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            backLeft.getState().speedMetersPerSecond, MetersPerSecond));
+                            backLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("frontRight")
                     .voltage(
-                        m_appliedVoltage.mut_replace(frontRight.getRawDriveNeoVoltage(), Volts))
+                        m_appliedVoltage.mut_replace(
+                            frontRightModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(frontRight.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(
+                            frontRightModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            frontRight.getState().speedMetersPerSecond, MetersPerSecond));
+                            frontRightModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("backRight")
-                    .voltage(m_appliedVoltage.mut_replace(backRight.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            backRightModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(backRight.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(backRightModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            backRight.getState().speedMetersPerSecond, MetersPerSecond));
+                            backRightModule.getState().speedMetersPerSecond, MetersPerSecond));
               },
               this));
 
@@ -203,46 +179,53 @@ public class Swerve extends SubsystemBase {
           new SysIdRoutine.Mechanism(
               (volts) -> {
                 // Set all the wheels to one direction
-                frontLeft.setO();
-                backLeft.setO();
-                frontRight.setO();
-                backRight.setO();
+                frontLeftModule.setO();
+                backLeftModule.setO();
+                frontRightModule.setO();
+                backRightModule.setO();
                 // apply the voltage
-                frontLeft.setRawDriveVoltage(volts.magnitude());
-                backLeft.setRawDriveVoltage(volts.magnitude());
-                frontRight.setRawDriveVoltage(volts.magnitude());
-                backRight.setRawDriveVoltage(volts.magnitude());
+                frontLeftModule.setRawDriveVoltage(volts.magnitude());
+                backLeftModule.setRawDriveVoltage(volts.magnitude());
+                frontRightModule.setRawDriveVoltage(volts.magnitude());
+                backRightModule.setRawDriveVoltage(volts.magnitude());
               },
               (log) -> {
                 log.motor("frontLeft")
-                    .voltage(m_appliedVoltage.mut_replace(frontLeft.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            frontLeftModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(frontLeft.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(frontLeftModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            frontLeft.getState().speedMetersPerSecond, MetersPerSecond));
+                            frontLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("backLeft")
-                    .voltage(m_appliedVoltage.mut_replace(backLeft.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(backLeftModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(backLeft.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(backLeftModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            backLeft.getState().speedMetersPerSecond, MetersPerSecond));
+                            backLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("frontRight")
                     .voltage(
-                        m_appliedVoltage.mut_replace(frontRight.getRawDriveNeoVoltage(), Volts))
+                        m_appliedVoltage.mut_replace(
+                            frontRightModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(frontRight.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(
+                            frontRightModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            frontRight.getState().speedMetersPerSecond, MetersPerSecond));
+                            frontRightModule.getState().speedMetersPerSecond, MetersPerSecond));
                 log.motor("backRight")
-                    .voltage(m_appliedVoltage.mut_replace(backRight.getRawDriveNeoVoltage(), Volts))
+                    .voltage(
+                        m_appliedVoltage.mut_replace(
+                            backRightModule.getRawDriveNeoVoltage(), Volts))
                     .linearPosition(
-                        m_distance.mut_replace(backRight.getPositon().distanceMeters, Meters))
+                        m_distance.mut_replace(backRightModule.getPositon().distanceMeters, Meters))
                     .linearVelocity(
                         m_velocity.mut_replace(
-                            backRight.getState().speedMetersPerSecond, MetersPerSecond));
+                            backRightModule.getState().speedMetersPerSecond, MetersPerSecond));
               },
               this));
 
@@ -254,18 +237,12 @@ public class Swerve extends SubsystemBase {
             kSwerve.kinematics,
             getGyroRaw(),
             new SwerveModulePosition[] {
-              frontLeft.getPositon(),
-              backLeft.getPositon(),
-              backRight.getPositon(),
-              frontRight.getPositon()
+              frontLeftModule.getPositon(),
+              backLeftModule.getPositon(),
+              backRightModule.getPositon(),
+              frontRightModule.getPositon()
             },
             new Pose2d(4, 4, new Rotation2d()));
-
-    // Register the Field2d object as a sendable
-    SendableBuilderImpl builder = new SendableBuilderImpl();
-    builder.setTable(poseTable);
-    SendableRegistry.publish(field2d, builder);
-    builder.startListeners();
 
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
@@ -462,31 +439,30 @@ public class Swerve extends SubsystemBase {
 
   // Drive chassis-oriented (optional flag for closed loop velocity control)
   public void drive(ChassisSpeeds speeds, boolean closedLoopDrive) {
-    // TODO log requested speeds
+    this.log("commandedSpeeds", speeds);
     speeds = limiter.calculate(speeds);
     speeds = ChassisSpeeds.discretize(speeds, 0.02);
     var targetStates = kSwerve.kinematics.toSwerveModuleStates(speeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, kSwerve.kModule.maxWheelSpeed);
 
-    // TODO log commanded speeds
-    chassisVelocity = speeds;
+    chassisVelocityTarget = speeds;
     setStates(targetStates, closedLoopDrive);
   }
 
   // Set wheels to x configuration
   public void xSwerve() {
-    frontLeft.setX();
-    backLeft.setX();
-    backRight.setX();
-    frontRight.setX();
+    frontLeftModule.setX();
+    backLeftModule.setX();
+    backRightModule.setX();
+    frontRightModule.setX();
   }
 
   // Set the drive motors to brake or coast
   public void setBrakeMode(boolean on) {
-    frontLeft.setBrakeMode(on);
-    backLeft.setBrakeMode(on);
-    backRight.setBrakeMode(on);
-    frontRight.setBrakeMode(on);
+    frontLeftModule.setBrakeMode(on);
+    backLeftModule.setBrakeMode(on);
+    backRightModule.setBrakeMode(on);
+    frontRightModule.setBrakeMode(on);
   }
 
   // Retrieve the pose estimation pose
@@ -495,8 +471,9 @@ public class Swerve extends SubsystemBase {
   }
 
   // Retrieve measured ChassisSpeeds
+  @Log.NT
   public ChassisSpeeds getChassisSpeeds() {
-    return kSwerve.kinematics.toChassisSpeeds(getStates());
+    return kSwerve.kinematics.toChassisSpeeds(getModuleStates());
   }
 
   // Set an initial pose for the pose estimator
@@ -515,6 +492,7 @@ public class Swerve extends SubsystemBase {
   }
 
   // Get gyro yaw rate (radians/s CCW +)
+  @Log.NT
   public double getGyroYawRate() {
     return Units.degreesToRadians(navX.getRawGyroZ());
   }
@@ -526,11 +504,13 @@ public class Swerve extends SubsystemBase {
   // ---------- Private hardware interface methods ----------
 
   // Get direct gyro reading as Rotation2d
+  @Log.NT
   private Rotation2d getGyroRaw() {
     return navX.getRotation2d();
   }
 
   // Get software offset gyro angle
+  @Log.NT
   private Rotation2d getGyro() {
     return getGyroRaw().minus(gyroOffset);
   }
@@ -538,24 +518,31 @@ public class Swerve extends SubsystemBase {
   // Retrieve the positions (angle and distance traveled) for each swerve module
   private SwerveModulePosition[] getPositions() {
     return new SwerveModulePosition[] {
-      frontLeft.getPositon(), backLeft.getPositon(), backRight.getPositon(), frontRight.getPositon()
+      frontLeftModule.getPositon(),
+      backLeftModule.getPositon(),
+      backRightModule.getPositon(),
+      frontRightModule.getPositon()
     };
   }
 
   // Retrieve the state (velocity and heading) for each swerve module
-  private SwerveModuleState[] getStates() {
+  @Log.NT
+  private SwerveModuleState[] getModuleStates() {
     return new SwerveModuleState[] {
-      frontLeft.getState(), backLeft.getState(), backRight.getState(), frontRight.getState()
+      frontLeftModule.getState(),
+      backLeftModule.getState(),
+      backRightModule.getState(),
+      frontRightModule.getState()
     };
   }
 
   // Set desired states (angle and velocity) to each module with an optional flag to enable closed
   // loop control on velocity
   private void setStates(SwerveModuleState[] states, boolean closedLoopDrive) {
-    frontLeft.setTargetState(states[0], closedLoopDrive);
-    backLeft.setTargetState(states[1], closedLoopDrive);
-    backRight.setTargetState(states[2], closedLoopDrive);
-    frontRight.setTargetState(states[3], closedLoopDrive);
+    frontLeftModule.setTargetState(states[0], closedLoopDrive);
+    backLeftModule.setTargetState(states[1], closedLoopDrive);
+    backRightModule.setTargetState(states[2], closedLoopDrive);
+    frontRightModule.setTargetState(states[3], closedLoopDrive);
   }
 
   // ---------- Periodic ----------
@@ -565,9 +552,10 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     if (RobotBase.isSimulation())
       simNavXYaw.set(
-          simNavXYaw.get() + chassisVelocity.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
+          simNavXYaw.get()
+              + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
-    log();
+    field2d.setRobotPose(getPose());
   }
 
   // ---------- Helpers ----------
@@ -603,46 +591,5 @@ public class Swerve extends SubsystemBase {
   // Save a few characters calling the full thing
   private ChassisSpeeds fieldToRobotSpeeds(ChassisSpeeds speeds) {
     return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyro());
-  }
-
-  // Log data to network tables
-  private void log() {
-    frontLeft.updateNT();
-    backLeft.updateNT();
-    backRight.updateNT();
-    frontRight.updateNT();
-
-    rawGyroPub.set(getGyroRaw().getRadians());
-    offsetGyroPub.set(getGyro().getRadians());
-    gyroRate.set(getGyroYawRate());
-    // Send the chassis velocity as a double array (vel_x, vel_y, omega_z)
-    chassisVelPub.set(
-        new double[] {
-          chassisVelocity.vxMetersPerSecond,
-          chassisVelocity.vyMetersPerSecond,
-          chassisVelocity.omegaRadiansPerSecond
-        });
-    var measuredVel = kSwerve.kinematics.toChassisSpeeds(getStates());
-    measuredVelPub.set(
-        new double[] {
-          measuredVel.vxMetersPerSecond,
-          measuredVel.vyMetersPerSecond,
-          measuredVel.omegaRadiansPerSecond
-        });
-
-    swerveStatesPub.set(
-        new double[] {
-          frontLeft.getTargetState().angle.getRadians(),
-              frontLeft.getTargetState().speedMetersPerSecond,
-          backLeft.getTargetState().angle.getRadians(),
-              backLeft.getTargetState().speedMetersPerSecond,
-          backRight.getTargetState().angle.getRadians(),
-              backRight.getTargetState().speedMetersPerSecond,
-          frontRight.getTargetState().angle.getRadians(),
-              frontRight.getTargetState().speedMetersPerSecond
-        });
-
-    field2d.setRobotPose(getPose());
-    autonRobot.setPose(new Pose2d(8, 4, Rotation2d.fromDegrees(90)));
   }
 }

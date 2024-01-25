@@ -82,7 +82,7 @@ public class Robot extends TimedRobot implements Logged {
     if (Robot.isSimulation()) DataLogManager.log("Simmode is " + Constants.simMode);
 
     // Start Monologue
-    Monologue.setupMonologue(this, "System", Constants.logFileOnly, Constants.logLazy);
+    Monologue.setupMonologue(this, "system", Constants.logFileOnly, Constants.logLazy);
     Monologue.setFileOnly(DriverStation.isFMSAttached() ? true : Constants.logFileOnly);
 
     // Configure command bindings

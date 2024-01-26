@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kOI;
 import frc.robot.Constants.kSwerve;
 import frc.robot.Constants.kSwerve.Auton;
+import frc.robot.Constants.kSwerve.kModule;
 import frc.robot.utilities.ChassisLimiter;
 import frc.robot.utilities.MAXSwerve;
 import java.util.Optional;
@@ -294,7 +295,7 @@ public class Swerve extends SubsystemBase implements Logged {
     return this.run(
             () -> {
               drive(
-                  fieldToRobotSpeeds(
+                  driverToChassisSpeeds(
                       joystickToChassis(
                           xTranslation.getAsDouble(),
                           yTranslation.getAsDouble(),
@@ -335,7 +336,7 @@ public class Swerve extends SubsystemBase implements Logged {
                   speeds.omegaRadiansPerSecond =
                       headingController.calculate(
                           getPose().getRotation().getRadians(), heading.getRadians());
-                  drive(fieldToRobotSpeeds(speeds), false);
+                  drive(driverToChassisSpeeds(speeds), false);
                   swerveState.set(SwerveState.Mode.HEADING_LOCK, boost.getAsBoolean());
                 }))
         .finallyDo(() -> swerveState.set(SwerveState.Mode.IDLE, false))
@@ -377,7 +378,7 @@ public class Swerve extends SubsystemBase implements Logged {
                               .getAngle()
                               .plus(Rotation2d.fromDegrees(180))
                               .getRadians());
-                  drive(fieldToRobotSpeeds(speeds), false);
+                  drive(driverToChassisSpeeds(speeds), false);
                   swerveState.set(SwerveState.Mode.POINT_OF_INTEREST, boost.getAsBoolean());
                 }))
         .finallyDo(() -> swerveState.set(SwerveState.Mode.IDLE, false))
@@ -474,13 +475,26 @@ public class Swerve extends SubsystemBase implements Logged {
   // Drive chassis-oriented (optional flag for closed loop velocity control)
   public void drive(ChassisSpeeds speeds, boolean closedLoopDrive) {
     this.log("commandedSpeeds", speeds);
-    speeds = limiter.calculate(speeds);
-    speeds = ChassisSpeeds.discretize(speeds, 0.02);
-    var targetStates = kSwerve.kinematics.toSwerveModuleStates(speeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, kSwerve.kModule.maxWheelSpeed);
 
+    // Record targeted speed
     chassisVelocityTarget = speeds;
+    limiter.update(ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getGyro()));
+
+    // Discretize to reduce drift when rotating
+    speeds = ChassisSpeeds.discretize(speeds, 0.02);
+
+    // Convert to module states and desaturate speeds to prevent exceeding module capabilities
+    var targetStates = kSwerve.kinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, kModule.maxWheelSpeed);
+    speeds = kSwerve.kinematics.toChassisSpeeds(targetStates);
+
     setStates(targetStates, closedLoopDrive);
+  }
+
+  // Convert driver field relative speeds to chassis speeds
+  public ChassisSpeeds driverToChassisSpeeds(ChassisSpeeds speeds) {
+    speeds = limiter.calculate(speeds);
+    return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyro());
   }
 
   // Set wheels to x configuration
@@ -647,10 +661,5 @@ public class Swerve extends SubsystemBase implements Logged {
     // Construct chassis speeds and return
     return new ChassisSpeeds(
         translationVelocity.get(0, 0), translationVelocity.get(1, 0), zRotation);
-  }
-
-  // Save a few characters calling the full thing
-  private ChassisSpeeds fieldToRobotSpeeds(ChassisSpeeds speeds) {
-    return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyro());
   }
 }

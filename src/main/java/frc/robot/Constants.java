@@ -8,7 +8,10 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkBase.IdleMode;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI.Port;
@@ -176,5 +179,10 @@ public class Constants {
       LINEAR,
       ANGULAR
     }
+    // Vision
+    public static final Transform3d aprilTagCameraPositionTransform =
+        new Transform3d(
+            new Translation3d(0.243, 0.193, 0.229),
+            new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
   }
 }

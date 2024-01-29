@@ -11,6 +11,8 @@ import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.PathPlannerLogging;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -43,10 +45,15 @@ import frc.robot.Constants.kSwerve;
 import frc.robot.Constants.kSwerve.Auton;
 import frc.robot.utilities.ChassisLimiter;
 import frc.robot.utilities.MAXSwerve;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import monologue.Annotations.Log;
 import monologue.Logged;
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 public class Swerve extends SubsystemBase implements Logged {
   // Hardware
@@ -108,6 +115,11 @@ public class Swerve extends SubsystemBase implements Logged {
   // Simulation
   private final SimDeviceSim simNavX = new SimDeviceSim("navX-Sensor", 0);
   private final SimDouble simNavXYaw = simNavX.getDouble("Yaw");
+
+  // Vision Objects
+  private PhotonCamera camera1 = new PhotonCamera("camera1");
+  private AprilTagFieldLayout fieldLayout;
+  private PhotonPoseEstimator photonPoseEstimator;
 
   // SysId Objects
   // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
@@ -243,6 +255,20 @@ public class Swerve extends SubsystemBase implements Logged {
               frontRightModule.getPositon()
             },
             new Pose2d(4, 4, new Rotation2d()));
+
+    // Vision
+    try {
+      fieldLayout =
+          AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
+    } catch (Exception e) {
+      System.out.println("Failed to load field layout");
+    }
+    photonPoseEstimator =
+        new PhotonPoseEstimator(
+            fieldLayout,
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            camera1,
+            kSwerve.aprilTagCameraPositionTransform);
 
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
@@ -476,6 +502,21 @@ public class Swerve extends SubsystemBase implements Logged {
     return kSwerve.kinematics.toChassisSpeeds(getModuleStates());
   }
 
+  // AddVisionMeasurement attempt
+  public void updatePoseWithCameraData() {
+    var camResult = camera1.getLatestResult();
+    if (camResult.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
+      double poseAmbiguity = camResult.getBestTarget().getPoseAmbiguity();
+      if (poseAmbiguity < 0.2
+          && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
+        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator.update();
+        poseEstimator.addVisionMeasurement(
+            estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
+            estimatedGlobalPoseVision.get().timestampSeconds);
+      }
+    }
+  }
+
   // Set an initial pose for the pose estimator
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(getGyroRaw(), getPositions(), pose);
@@ -555,6 +596,7 @@ public class Swerve extends SubsystemBase implements Logged {
           simNavXYaw.get()
               + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
+    updatePoseWithCameraData();
     field2d.setRobotPose(getPose());
   }
 

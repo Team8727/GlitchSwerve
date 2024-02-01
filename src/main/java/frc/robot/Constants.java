@@ -180,7 +180,11 @@ public class Constants {
       ANGULAR
     }
     // Vision
-    public static final Transform3d aprilTagCameraPositionTransform =
+    public static final Transform3d aprilTagCamera1PositionTransform =
+        new Transform3d(
+            new Translation3d(0.243, 0.193, 0.229),
+            new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
+    public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
             new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year

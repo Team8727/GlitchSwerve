@@ -118,8 +118,10 @@ public class Swerve extends SubsystemBase implements Logged {
 
   // Vision Objects
   private PhotonCamera camera1 = new PhotonCamera("camera1");
+  private PhotonCamera camera2 = new PhotonCamera("camera2");
   private AprilTagFieldLayout fieldLayout;
-  private PhotonPoseEstimator photonPoseEstimator;
+  private PhotonPoseEstimator photonPoseEstimator1;
+  private PhotonPoseEstimator photonPoseEstimator2;
 
   // SysId Objects
   // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
@@ -263,12 +265,18 @@ public class Swerve extends SubsystemBase implements Logged {
     } catch (Exception e) {
       System.out.println("Failed to load field layout");
     }
-    photonPoseEstimator =
+    photonPoseEstimator1 =
         new PhotonPoseEstimator(
             fieldLayout,
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera1,
-            kSwerve.aprilTagCameraPositionTransform);
+            kSwerve.aprilTagCamera1PositionTransform);
+    photonPoseEstimator2 =
+        new PhotonPoseEstimator(
+            fieldLayout,
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            camera2,
+            kSwerve.aprilTagCamera1PositionTransform);
 
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
@@ -502,14 +510,25 @@ public class Swerve extends SubsystemBase implements Logged {
     return kSwerve.kinematics.toChassisSpeeds(getModuleStates());
   }
 
-  // AddVisionMeasurement attempt
+  // AddVisionMeasurement With Two camera streams
   public void updatePoseWithCameraData() {
-    var camResult = camera1.getLatestResult();
-    if (camResult.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
-      double poseAmbiguity = camResult.getBestTarget().getPoseAmbiguity();
+    var cam1Result = camera1.getLatestResult();
+    if (cam1Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
+      double poseAmbiguity = cam1Result.getBestTarget().getPoseAmbiguity();
       if (poseAmbiguity < 0.2
           && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
-        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator.update();
+        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator1.update();
+        poseEstimator.addVisionMeasurement(
+            estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
+            estimatedGlobalPoseVision.get().timestampSeconds);
+      }
+    }
+    var cam2Result = camera2.getLatestResult();
+    if (cam2Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
+      double poseAmbiguity = cam2Result.getBestTarget().getPoseAmbiguity();
+      if (poseAmbiguity < 0.2
+          && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
+        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator2.update();
         poseEstimator.addVisionMeasurement(
             estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
             estimatedGlobalPoseVision.get().timestampSeconds);

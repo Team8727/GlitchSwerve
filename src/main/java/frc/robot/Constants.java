@@ -8,6 +8,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkBase.IdleMode;
+
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -188,5 +189,50 @@ public class Constants {
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
             new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
+  }
+  public static class kIntake{
+    public static class kPivot{
+      public static int pivotMotorID = 20; //TODO GET REAL ID
+      public static double minPIDOutput = -1.0;
+      public static double maxPIDOutput = 1.0;
+      //PID
+      public static double kP = 0; // TODO get Real
+      public static double kD = 0; // TODO get Real
+      //FF
+      public static double kS = 0; //TODO get real
+      public static double kG = 0; //TODO Get real
+      public static double kV = 0; //TODO get Real
+      public static double kA = 0; //TODO get real
+      public static class kProfile {
+        public static double maxVel = 0;
+        public static double minVel = 0;
+      }
+      public static final double intakePivotEncoderPositionFactor = (2 * Math.PI); // radians
+    }
+    public static class kRollers{
+      public static int rollerMotorID = 21; //TODO GET REAL ID
+      public static int boolSensorChannel = 100; // TODO get real channel
+    }
+  }
+  public static class kShooter {
+    public static class kPivot{
+      public static class kMotor1{
+        public static int pivotMotorID = 22; //TODO GET REAL ID
+        public static double kP = 0; // TODO get Real
+        public static double kD = 0; // TODO get Real
+      }
+      public static class kMotor2{
+        public static int pivotMotorID = 23; //TODO GET REAL
+        public static double kP = 0; // TODO get Real
+        public static double kD = 0; // TODO get Real
+      }
+      public static double minPIDOutput = -1.0;
+      public static double maxPIDOutput = 1.0;
+      public static final double intakePivotEncoderPositionFactor = (2 * Math.PI); // radians
+    }
+    public static class kFlywheels{
+      public static int flywheel1ID = 24;
+      public static int flywheel2ID = 25;
+    }
   }
 }

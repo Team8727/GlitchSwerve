@@ -17,6 +17,7 @@ public class Constants {
   public static SimMode simMode = SimMode.DESKTOP;
   public static boolean logFileOnly = false;
   public static boolean logLazy = true;
+  public static int configurationSetRetries = 5;
 
   // Operator interface constants
   public static class kOI {

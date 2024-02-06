@@ -3,6 +3,7 @@ package frc.robot.utilities;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 import com.revrobotics.CANSparkMax;
+import frc.robot.Constants;
 import java.util.Set;
 
 public class SparkConfigurator {
@@ -48,42 +49,45 @@ public class SparkConfigurator {
     CANSparkMax spark = new CANSparkMax(id, motorType);
     spark.restoreFactoryDefaults();
 
-    int status0 = FAST; // Applied Output & Faults
-    int status1 = SLOW; // Velocity, Voltage, & Current
-    int status2 = SLOW; // Position
-    int status3 = OFF; // Analog Sensor
-    int status4 = OFF; // Alternate Encoder
-    int status5 = OFF; // Absolute Encoder Position
-    int status6 = OFF; // Absolute Encoder Velocity
+    int[] status = {FAST, SLOW, SLOW, OFF, OFF, OFF, OFF};
+    // status0 Applied Output & Faults
+    // status1 Velocity, Voltage, & Current
+    // status2 Position
+    // status3 Analog Sensor
+    // status4 Alternate Encoder
+    // status5 Absolute Encoder Position
+    // status6 Absolute Encoder Velocity
 
     if (!hasFollower && !logData.contains(LogData.VOLTAGE)) {
-      status0 = SLOW;
+      status[0] = SLOW;
     }
 
     if (logData.contains(LogData.VELOCITY)
         || logData.contains(LogData.VOLTAGE)
         || logData.contains(LogData.CURRENT)) {
-      status1 = NORMAL;
+      status[1] = NORMAL;
     }
 
-    if (logData.contains(LogData.POSITION)) status2 = NORMAL;
+    if (logData.contains(LogData.POSITION)) status[2] = NORMAL;
 
-    if (sensors.contains(Sensors.ANALOG)) status3 = NORMAL;
+    if (sensors.contains(Sensors.ANALOG)) status[3] = NORMAL;
 
-    if (sensors.contains(Sensors.ALTERNATE)) status4 = NORMAL;
+    if (sensors.contains(Sensors.ALTERNATE)) status[4] = NORMAL;
 
     if (sensors.contains(Sensors.ABSOLUTE)) {
-      if (logData.contains(LogData.POSITION)) status5 = NORMAL;
-      if (logData.contains(LogData.VELOCITY)) status6 = NORMAL;
+      if (logData.contains(LogData.POSITION)) status[5] = NORMAL;
+      if (logData.contains(LogData.VELOCITY)) status[6] = NORMAL;
     }
 
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus0, status0);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus1, status1);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus2, status2);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus3, status3);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus4, status4);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus5, status5);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus6, status6);
+    for (int i = 0; i < 7; i++) {
+      for (int j = 0; j < Constants.configurationSetRetries; j++) {
+        spark.setPeriodicFramePeriod(PeriodicFrame.values()[i], status[i]);
+        try {
+          Thread.sleep(5);
+        } catch (Exception e) {
+        }
+      }
+    }
 
     return spark;
   }
@@ -92,21 +96,24 @@ public class SparkConfigurator {
     CANSparkMax spark = new CANSparkMax(id, motorType);
     spark.follow(leader);
 
-    int status0 = SLOW;
-    int status1 = SLOW;
-    int status2 = SLOW;
-    int status3 = OFF;
-    int status4 = OFF;
-    int status5 = OFF;
-    int status6 = OFF;
+    int[] status = {SLOW, SLOW, SLOW, OFF, OFF, OFF, OFF};
+    // status0 Applied Output & Faults
+    // status1 Velocity, Voltage, & Current
+    // status2 Position
+    // status3 Analog Sensor
+    // status4 Alternate Encoder
+    // status5 Absolute Encoder Position
+    // status6 Absolute Encoder Velocity
 
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus0, status0);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus1, status1);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus2, status2);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus3, status3);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus4, status4);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus5, status5);
-    spark.setPeriodicFramePeriod(PeriodicFrame.kStatus6, status6);
+    for (int i = 0; i < 7; i++) {
+      for (int j = 0; j < Constants.configurationSetRetries; j++) {
+        spark.setPeriodicFramePeriod(PeriodicFrame.values()[i], status[i]);
+        try {
+          Thread.sleep(5);
+        } catch (Exception e) {
+        }
+      }
+    }
 
     return spark;
   }

@@ -112,7 +112,7 @@ public class MAXSwerve implements Logged {
   }
 
   // Get the state of the module (vel, heading)
-  @Log.File
+  @Log.NT
   public SwerveModuleState getState() {
     if (RobotBase.isSimulation()) return targetState;
     return new SwerveModuleState(driveEncoder.getVelocity(), getCorrectedSteer());

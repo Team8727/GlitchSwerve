@@ -37,6 +37,19 @@ public class Constants {
     DESKTOP
   }
 
+  public static class kClimber {
+    public static int climberID = 30;
+
+    // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
+    // = SimpleMotorFeedforward(kS, kV, kA);
+    public static final double kS = 0;
+    public static final double kV = 0;
+    public static final double kA = 0;
+
+    public static final double kP = 0;
+    public static final double kD = 0;
+  }
+  
   public enum TestMode {
     NONE,
     SYSID,
@@ -245,17 +258,6 @@ public class Constants {
       public static double outtakeVoltage = -1; // TODO tune
       public static double delayForOuttake = 1;
     }
-  }
-
-  public static class kClimber {
-    public static final int climberID = 0; // Find this
-
-    public static final double kS = 0; // Find this
-    public static final double kV = 0; // Find this
-    public static final double kA = 0; // Find this
-
-    public static final double kP = 0; // Find this
-    public static final double kD = 0; // Find this
   }
 
   public static class kShooter {

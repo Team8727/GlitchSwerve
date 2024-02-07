@@ -32,6 +32,9 @@ public class Constants {
     DESKTOP
   }
 
+  public static class kClimber {
+    public static int climberID = 30;
+  }
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {
     // Chassis dimensions from wheel center to center (meters)

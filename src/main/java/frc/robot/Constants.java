@@ -34,7 +34,14 @@ public class Constants {
 
   public static class kClimber {
     public static int climberID = 30;
+
+    // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
+    // = SimpleMotorFeedforward(kS, kV, kA);
+    public static double kS = 0;
+    public static double kV = 0;
+    public static double kA = 0;
   }
+
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {
     // Chassis dimensions from wheel center to center (meters)

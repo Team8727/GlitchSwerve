@@ -35,19 +35,17 @@ public class Constants {
     DESKTOP
   }
 
-  // SysId
-  public static enum sysIdType {
-    LINEAR,
-    ANGULAR
-  }
+  public static class kClimber {
+    public static int climberID = 30;
 
-  public static enum subsystems {
-    SWERVE,
-    INTAKEPIVOT,
-    INTAKEROLLERS,
-    SHOOTERFLYWHEELS,
-    SHOOTERPIVOT,
-    CLIMBER
+    // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
+    // = SimpleMotorFeedforward(kS, kV, kA);
+    public static final double kS = 0;
+    public static final double kV = 0;
+    public static final double kA = 0;
+
+    public static final double kP = 0;
+    public static final double kD = 0;
   }
 
   // Swerve subsystem constants (module constants included)
@@ -227,17 +225,6 @@ public class Constants {
       public static int rollerMotorID = 21; // TODO GET REAL ID
       public static int boolSensorChannel = 100; // TODO get real channel
     }
-  }
-
-  public static class kClimber {
-    public static final int climberID = 0; // Find this
-
-    public static final double kS = 0; // Find this
-    public static final double kV = 0; // Find this
-    public static final double kA = 0; // Find this
-
-    public static final double kP = 0; // Find this
-    public static final double kD = 0; // Find this
   }
 
   public static class kShooter {

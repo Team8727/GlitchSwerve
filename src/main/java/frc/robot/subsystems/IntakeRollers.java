@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -16,6 +17,7 @@ public class IntakeRollers extends SubsystemBase {
 
   public IntakeRollers() {
     intakeMotor = getSparkMax(kRollers.rollerMotorID, CANSparkLowLevel.MotorType.kBrushless);
+    intakeMotor.setIdleMode(IdleMode.kBrake);
     pieceCheck = new DigitalInput(kRollers.boolSensorChannel);
   }
 

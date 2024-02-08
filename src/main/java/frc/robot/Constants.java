@@ -222,26 +222,53 @@ public class Constants {
 
   public static class kShooter {
     public static class kPivot {
-      public static class kMotor1 {
-        public static int pivotMotorID = 22; // TODO GET REAL ID
-        public static double kP = 0; // TODO get Real
-        public static double kD = 0; // TODO get Real
-      }
+      public static int pivot1MotorID = 22; // TODO GET REAL ID
+      public static int pivot2MotorID = 23; // TODO GET REAL
 
-      public static class kMotor2 {
-        public static int pivotMotorID = 23; // TODO GET REAL
-        public static double kP = 0; // TODO get Real
-        public static double kD = 0; // TODO get Real
-      }
-
+      // PD
+      public static double kP = 0; // TODO get Real
+      public static double kD = 0; // TODO get Real
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       public static final double intakePivotEncoderPositionFactor = (2 * Math.PI); // radians
+      public static double period = 0.02;
+
+      // FF
+      public static double kS = 0; // TODO GET REAL
+      public static double kG = 0; // TODO get Real
+      public static double kV = 0; // TODO get Real
+      public static double kA = 0; // TODO get real
+
+      public static class kProfile {
+        public static double maxVel = 0;
+        public static double minVel = 0;
+      }
     }
 
     public static class kFlywheels {
-      public static int flywheel1ID = 24;
-      public static int flywheel2ID = 25;
+      public static class kFlywheel1 {
+        public static int canID = 24;
+        public static double ks = 0;
+        public static double kv = 0;
+        public static double ka = 0;
+        public static double minPIDOutput = 0;
+        public static double maxPIDOutput = 0;
+        public static double kP = 0;
+        public static double kD = 0;
+      }
+
+      public static class kFlywheel2 {
+        public static int canID = 25;
+        public static double ks = 0;
+        public static double kv = 0;
+        public static double ka = 0;
+        public static double minPIDOutput = 0;
+        public static double maxPIDOutput = 0;
+        public static double kP = 0;
+        public static double kD = 0;
+      }
+
+      public static double encoderPositionFactor = (2 * Math.PI);
     }
   }
 }

@@ -50,23 +50,27 @@ public class IntakePivot extends SubsystemBase {
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
   }
 
-  private TrapezoidProfile.State calculateSetpoint(double posRad){
-    goal = new TrapezoidProfile.State(posRad,0);
+  private TrapezoidProfile.State calculateSetpoint(double posRad) {
+    goal = new TrapezoidProfile.State(posRad, 0);
     setpoint = profile.calculate(kPivot.period, setpoint, goal);
     return setpoint;
   }
 
-  private boolean getDone(){
+  private boolean getDone() {
     return goal.position == pivotEncoder.getPosition();
   }
 
   // Set position input radians
   public Command setIntakePivotPos(double posRad) {
     return this.run(
-        () -> {
-            TrapezoidProfile.State pos = calculateSetpoint(posRad);
-            pivotPID.setReference(pos.position, ControlType.kPosition,0,pivotFF.calculate(pos.position, pos.velocity));
-        })
+            () -> {
+              TrapezoidProfile.State pos = calculateSetpoint(posRad);
+              pivotPID.setReference(
+                  pos.position,
+                  ControlType.kPosition,
+                  0,
+                  pivotFF.calculate(pos.position, pos.velocity));
+            })
         .until(this::getDone);
   }
 }

@@ -45,12 +45,12 @@ public class Constants {
     public static double maxTransSpeed = 5;
     public static double maxAngSpeed = 3 * Math.PI;
 
-    public static double maxTransAccel = 0.9 * 9.81;
-    public static double maxAngAccel = 12;
+    public static double maxTransAccel = 1.25 * 9.81;
+    public static double maxAngAccel = 10 * 2 * Math.PI;
 
     // Operator interface constants
     public static class Teleop {
-      public static double translationGain = 0.7;
+      public static double translationGain = 0.85;
       public static double rotationGain = 0.7;
 
       public static boolean closedLoop = false;

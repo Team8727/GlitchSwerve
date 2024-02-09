@@ -1,5 +1,9 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.MutableMeasure.mutable;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.AbsoluteEncoder;
@@ -12,17 +16,22 @@ import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
 
 public class ShooterPivot extends SubsystemBase {
   // Motorcontrollers
-  private CANSparkMax pivotMotor1;
-  private CANSparkMax pivotMotor2;
+  private final CANSparkMax pivotMotor1;
+  private final CANSparkMax pivotMotor2;
 
   // Feedforwards
-  private ArmFeedforward pivotFF;
+  private final ArmFeedforward pivotFF;
 
   // PID controllers
   private final SparkPIDController pivotPID;
@@ -31,11 +40,21 @@ public class ShooterPivot extends SubsystemBase {
   private final AbsoluteEncoder pivotEncoder;
 
   // Profile Stuff
-  private TrapezoidProfile.Constraints constraints =
+  private final TrapezoidProfile.Constraints constraints =
       new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.minVel);
-  private TrapezoidProfile profile = new TrapezoidProfile(constraints);
+  private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
   private TrapezoidProfile.State goal = new TrapezoidProfile.State();
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
+
+  // SysId Objects
+  // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
+  private final MutableMeasure<Voltage> m_appliedVoltage = mutable(Volts.of(0));
+  // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
+  private final MutableMeasure<Angle> m_angle = mutable(Radians.of(0));
+  // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
+  private final MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
+
+  private final SysIdRoutine angularRoutine;
 
   public ShooterPivot() {
     // Motor Initializations
@@ -60,6 +79,26 @@ public class ShooterPivot extends SubsystemBase {
     pivotPID.setPositionPIDWrappingEnabled(false);
     pivotPID.setP(kPivot.kP);
     pivotPID.setD(kPivot.kD);
+
+    // SysId object
+    angularRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(),
+            new SysIdRoutine.Mechanism(
+                (volts) -> {
+                  pivotMotor1.setVoltage(volts.magnitude());
+                },
+                (log) -> {
+                  pivotEncoder.setVelocityConversionFactor(Math.PI);
+                  log.motor("shooterPivotMotor")
+                      .voltage(m_appliedVoltage.mut_replace(pivotMotor1.getBusVoltage(), Volts))
+                      .angularPosition(
+                          m_angle.mut_replace(pivotEncoder.getPosition() * Math.PI, Radians))
+                      .angularVelocity(
+                          m_velocity.mut_replace(
+                              (pivotEncoder.getVelocity() * Math.PI), RadiansPerSecond));
+                },
+                this));
   }
 
   private TrapezoidProfile.State calculateSetpoint(double posRad) {
@@ -69,7 +108,8 @@ public class ShooterPivot extends SubsystemBase {
   }
 
   private boolean getDone() {
-    return goal.position == pivotEncoder.getPosition();
+    return goal.position == pivotEncoder.getPosition()
+        && goal.velocity == pivotEncoder.getVelocity();
   }
 
   // Set position input radians
@@ -84,5 +124,10 @@ public class ShooterPivot extends SubsystemBase {
                   pivotFF.calculate(pos.position, pos.velocity));
             })
         .until(this::getDone);
+  }
+
+  // Get SysID Routine
+  public SysIdRoutine getAngularRoutine() {
+    return angularRoutine;
   }
 }

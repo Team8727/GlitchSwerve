@@ -35,6 +35,21 @@ public class Constants {
     DESKTOP
   }
 
+  // SysId
+  public static enum sysIdType {
+    LINEAR,
+    ANGULAR
+  }
+
+  public static enum subsystems {
+    SWERVE,
+    INTAKEPIVOT,
+    INTAKEROLLERS,
+    SHOOTERFLYWHEELS,
+    SHOOTERPIVOT,
+    CLIMBER
+  }
+
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {
     // Chassis dimensions from wheel center to center (meters)
@@ -174,11 +189,6 @@ public class Constants {
       public static int frontRightSteer = 8;
     }
 
-    // SysId
-    public static enum sysIdType {
-      LINEAR,
-      ANGULAR
-    }
     // Vision
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(

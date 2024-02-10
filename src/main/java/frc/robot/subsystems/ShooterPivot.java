@@ -4,7 +4,7 @@ import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.utilities.SparkConfigurator.getSparkMax;
+import static frc.robot.utilities.SparkConfigurator.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase;
@@ -24,6 +24,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
+import frc.robot.utilities.SparkConfigurator.LogData;
+import frc.robot.utilities.SparkConfigurator.Sensors;
+import java.util.Set;
 
 public class ShooterPivot extends SubsystemBase {
   // Motorcontrollers
@@ -41,7 +44,7 @@ public class ShooterPivot extends SubsystemBase {
 
   // Profile Stuff
   private final TrapezoidProfile.Constraints constraints =
-      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.minVel);
+      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel);
   private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
   private TrapezoidProfile.State goal = new TrapezoidProfile.State();
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
@@ -58,11 +61,17 @@ public class ShooterPivot extends SubsystemBase {
 
   public ShooterPivot() {
     // Motor Initializations
-    pivotMotor1 = getSparkMax(kPivot.pivot1MotorID, CANSparkLowLevel.MotorType.kBrushless);
-    pivotMotor2 = getSparkMax(kPivot.pivot2MotorID, CANSparkLowLevel.MotorType.kBrushless);
+    pivotMotor1 =
+        getSparkMax(
+            kPivot.pivot1MotorID,
+            CANSparkLowLevel.MotorType.kBrushless,
+            true,
+            Set.of(Sensors.ABSOLUTE),
+            Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
+    pivotMotor2 =
+        getFollower(pivotMotor1, kPivot.pivot2MotorID, CANSparkLowLevel.MotorType.kBrushless);
     pivotMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
     pivotMotor2.setIdleMode(CANSparkBase.IdleMode.kBrake);
-    pivotMotor2.follow(pivotMotor1);
 
     // Feed Forwards
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);

@@ -4,6 +4,7 @@ import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.utilities.SparkConfigurator.*;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.AbsoluteEncoder;
@@ -24,22 +25,22 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kIntake.kPivot;
+import frc.robot.utilities.SparkConfigurator.Sensors;
+import java.util.Set;
 
 public class IntakePivot extends SubsystemBase {
 
   private final CANSparkMax pivotMotor;
-
-  private final SparkPIDController pivotPID;
-
   private final AbsoluteEncoder pivotEncoder;
 
   private final ArmFeedforward pivotFF;
+  private final SparkPIDController pivotPID;
 
   private final SysIdRoutine angularRoutine;
 
   // Profile Stuff
   private final TrapezoidProfile.Constraints constraints =
-      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.minVel);
+      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel);
   private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
   private TrapezoidProfile.State goal = new TrapezoidProfile.State();
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
@@ -54,7 +55,13 @@ public class IntakePivot extends SubsystemBase {
 
   public IntakePivot() {
     // Motor Configs
-    pivotMotor = getSparkMax(kPivot.pivotMotorID, CANSparkLowLevel.MotorType.kBrushless);
+    pivotMotor =
+        getSparkMax(
+            kPivot.pivotMotorID,
+            CANSparkLowLevel.MotorType.kBrushless,
+            false,
+            Set.of(Sensors.ABSOLUTE),
+            Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     pivotMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
 
     // Encoder Configs

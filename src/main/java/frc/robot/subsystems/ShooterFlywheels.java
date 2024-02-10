@@ -23,6 +23,9 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kFlywheels;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
+import frc.robot.utilities.SparkConfigurator.LogData;
+import frc.robot.utilities.SparkConfigurator.Sensors;
+import java.util.Set;
 
 public class ShooterFlywheels extends SubsystemBase {
   // Motor Controllers
@@ -51,8 +54,20 @@ public class ShooterFlywheels extends SubsystemBase {
   private final MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
 
   public ShooterFlywheels() {
-    flywheel1 = getSparkMax(kFlywheel1.canID, CANSparkLowLevel.MotorType.kBrushless);
-    flywheel2 = getSparkMax(kFlywheel2.canID, CANSparkLowLevel.MotorType.kBrushless);
+    flywheel1 =
+        getSparkMax(
+            kFlywheel1.canID,
+            CANSparkLowLevel.MotorType.kBrushless,
+            false,
+            Set.of(Sensors.ABSOLUTE),
+            Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
+    flywheel2 =
+        getSparkMax(
+            kFlywheel2.canID,
+            CANSparkLowLevel.MotorType.kBrushless,
+            false,
+            Set.of(Sensors.ABSOLUTE),
+            Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
 
     // FeedForwards
     fly1FF = new SimpleMotorFeedforward(kFlywheel1.ks, kFlywheel1.kv, kFlywheel1.ka);

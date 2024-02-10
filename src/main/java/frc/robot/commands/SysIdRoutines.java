@@ -3,10 +3,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-import frc.robot.Constants;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
@@ -55,45 +52,6 @@ public class SysIdRoutines {
     populateSendable();
   }
 
-  // Command Methods that return either a quasistatic or dynamic routine for the SysIdProcess
-  private Command sysIdQuasistatic(
-      SysIdRoutine.Direction direction, Constants.sysIdType type, Constants.subsystems subsystem) {
-    if (subsystem == Constants.subsystems.SWERVE) {
-      if (type == Constants.sysIdType.ANGULAR) {
-        return swerve.getAngularRoutine().quasistatic(direction);
-      } else {
-        return swerve.getLinearRoutine().quasistatic(direction);
-      }
-    } else if (subsystem == Constants.subsystems.INTAKEPIVOT) {
-      return intakePivot.getAngularRoutine().quasistatic(direction);
-    } else if (subsystem == Constants.subsystems.SHOOTERPIVOT) {
-      return shooterPivot.getAngularRoutine().quasistatic(direction);
-    } else if (subsystem == Constants.subsystems.SHOOTERFLYWHEELS) {
-      return shooterFlywheels.getAngularRoutine().quasistatic(direction);
-    } else {
-      return new WaitCommand(100);
-    }
-  }
-
-  private Command sysIdDynamic(
-      SysIdRoutine.Direction direction, Constants.sysIdType type, Constants.subsystems subsystem) {
-    if (subsystem == Constants.subsystems.SWERVE) {
-      if (type == Constants.sysIdType.ANGULAR) {
-        return swerve.getAngularRoutine().dynamic(direction);
-      } else {
-        return swerve.getLinearRoutine().dynamic(direction);
-      }
-    } else if (subsystem == Constants.subsystems.INTAKEPIVOT) {
-      return intakePivot.getAngularRoutine().dynamic(direction);
-    } else if (subsystem == Constants.subsystems.SHOOTERPIVOT) {
-      return shooterPivot.getAngularRoutine().dynamic(direction);
-    } else if (subsystem == Constants.subsystems.SHOOTERFLYWHEELS) {
-      return shooterFlywheels.getAngularRoutine().dynamic(direction);
-    } else {
-      return new WaitCommand(100);
-    }
-  }
-
   // Loads all necessary routine permutations into a Hashmap
   private void loadRoutines() {
     routines.put("No Routine", Commands.waitSeconds(100));
@@ -101,95 +59,60 @@ public class SysIdRoutines {
     // Linear Swerve Routines
     routines.put(
         "swerveLinearForwardQuasistatic",
-        sysIdQuasistatic(
-            Direction.kForward, Constants.sysIdType.LINEAR, Constants.subsystems.SWERVE));
+        swerve.getLinearRoutine().quasistatic(Direction.kForward));
     routines.put(
         "swerveLinearReverseQuasistatic",
-        sysIdQuasistatic(
-            Direction.kReverse, Constants.sysIdType.LINEAR, Constants.subsystems.SWERVE));
-    routines.put(
-        "linearForwardDynamic",
-        sysIdDynamic(Direction.kForward, Constants.sysIdType.LINEAR, Constants.subsystems.SWERVE));
-    routines.put(
-        "linearReverseDynamic",
-        sysIdDynamic(Direction.kReverse, Constants.sysIdType.LINEAR, Constants.subsystems.SWERVE));
+        swerve.getLinearRoutine().quasistatic(Direction.kReverse));
+    routines.put("linearForwardDynamic", swerve.getLinearRoutine().dynamic(Direction.kForward));
+    routines.put("linearReverseDynamic", swerve.getLinearRoutine().dynamic(Direction.kReverse));
+
     // Angular Swerve Routines
     routines.put(
         "swerveAngularForwardQuasistatic",
-        sysIdQuasistatic(
-            Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.SWERVE));
+        swerve.getAngularRoutine().quasistatic(Direction.kForward));
     routines.put(
         "swerveAngularReverseQuasistatic",
-        sysIdQuasistatic(
-            Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.SWERVE));
-    routines.put(
-        "angularForwardDynamic",
-        sysIdDynamic(Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.SWERVE));
-    routines.put(
-        "angularReverseDynamic",
-        sysIdDynamic(Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.SWERVE));
+        swerve.getAngularRoutine().quasistatic(Direction.kForward));
+    routines.put("angularForwardDynamic", swerve.getAngularRoutine().dynamic(Direction.kForward));
+    routines.put("angularReverseDynamic", swerve.getAngularRoutine().dynamic(Direction.kReverse));
 
     // IntakePivtot
     routines.put(
         "intakePivotForwardQuasistatic",
-        sysIdQuasistatic(
-            Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.INTAKEPIVOT));
+        intakePivot.getAngularRoutine().quasistatic(Direction.kForward));
     routines.put(
         "intakePivotReverseQuasistatic",
-        sysIdQuasistatic(
-            Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.INTAKEPIVOT));
+        intakePivot.getAngularRoutine().quasistatic(Direction.kReverse));
     routines.put(
-        "intakePivotForwardDynamic",
-        sysIdDynamic(
-            Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.INTAKEPIVOT));
+        "intakePivotForwardDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kForward));
     routines.put(
-        "intakePivotReverseDynamic",
-        sysIdDynamic(
-            Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.INTAKEPIVOT));
+        "intakePivotReverseDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kReverse));
 
     // ShooterPivot
     routines.put(
         "shooterPivotForwardQuasistatic",
-        sysIdQuasistatic(
-            Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.SHOOTERPIVOT));
+        shooterPivot.getAngularRoutine().quasistatic(Direction.kForward));
     routines.put(
         "shooterPivotReverseQuasistatic",
-        sysIdQuasistatic(
-            Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.SHOOTERPIVOT));
+        shooterPivot.getAngularRoutine().quasistatic(Direction.kReverse));
     routines.put(
-        "shooterPivotForwardDynamic",
-        sysIdDynamic(
-            Direction.kForward, Constants.sysIdType.ANGULAR, Constants.subsystems.SHOOTERPIVOT));
+        "shooterPivotForwardDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kForward));
     routines.put(
-        "shooterPivotReverseDynamic",
-        sysIdDynamic(
-            Direction.kReverse, Constants.sysIdType.ANGULAR, Constants.subsystems.SHOOTERPIVOT));
+        "shooterPivotReverseDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kReverse));
 
     // ShooterFlywheels
     routines.put(
         "shooterFlywheelsForwardQuasistatic",
-        sysIdQuasistatic(
-            Direction.kForward,
-            Constants.sysIdType.ANGULAR,
-            Constants.subsystems.SHOOTERFLYWHEELS));
+        shooterFlywheels.getAngularRoutine().quasistatic(Direction.kForward));
     routines.put(
         "shooterFlywheelsReverseQuasistatic",
-        sysIdQuasistatic(
-            Direction.kReverse,
-            Constants.sysIdType.ANGULAR,
-            Constants.subsystems.SHOOTERFLYWHEELS));
+        shooterFlywheels.getAngularRoutine().quasistatic(Direction.kReverse));
     routines.put(
         "shooterFlywheelsForwardDynamic",
-        sysIdDynamic(
-            Direction.kForward,
-            Constants.sysIdType.ANGULAR,
-            Constants.subsystems.SHOOTERFLYWHEELS));
+        shooterFlywheels.getAngularRoutine().dynamic(Direction.kForward));
     routines.put(
         "shooterFlywheelsReverseDynamic",
-        sysIdDynamic(
-            Direction.kReverse,
-            Constants.sysIdType.ANGULAR,
-            Constants.subsystems.SHOOTERFLYWHEELS));
+        shooterFlywheels.getAngularRoutine().dynamic(Direction.kReverse));
   }
 
   // Adds all the Commands to the sendable chooser

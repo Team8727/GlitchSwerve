@@ -204,7 +204,6 @@ public class Constants {
     public static class kPivot {
       public static int pivotMotorID = 20; // TODO GET REAL ID
       public static double period = 0.02;
-      // public static double errorBound = (m_maximumInput - m_minimumInput) / 2.0;
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
@@ -218,7 +217,7 @@ public class Constants {
 
       public static class kProfile {
         public static double maxVel = 0;
-        public static double minVel = 0;
+        public static double maxAccel = 0;
       }
 
       public static final double intakePivotEncoderPositionFactor = (2 * Math.PI); // radians
@@ -251,7 +250,7 @@ public class Constants {
 
       public static class kProfile {
         public static double maxVel = 0;
-        public static double minVel = 0;
+        public static double maxAccel = 0;
       }
     }
 

@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -18,7 +19,6 @@ public class Climber extends SubsystemBase {
   SparkPIDController climbPID;
 
   public Climber() {
-    feedforward = new SimpleMotorFeedforward(kClimber.kS, kClimber.kV, kClimber.kA);
     climbMotor = new CANSparkMax(kClimber.climberID, MotorType.kBrushless);
     feedforward = new SimpleMotorFeedforward(kClimber.kS, kClimber.kV, kClimber.kA);
     climbPID = climbMotor.getPIDController();

@@ -247,6 +247,17 @@ public class Constants {
     }
   }
 
+  public static class kClimber {
+    public static final int climberID = 0; // Find this
+
+    public static final double kS = 0; // Find this
+    public static final double kV = 0; // Find this
+    public static final double kA = 0; // Find this
+
+    public static final double kP = 0; // Find this
+    public static final double kD = 0; // Find this
+  }
+
   public static class kShooter {
     public static class kPivot {
       public static int pivot1MotorID = 11;

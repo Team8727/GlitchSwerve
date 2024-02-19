@@ -36,7 +36,22 @@ public class Constants {
     DESKTOP_VISION,
     DESKTOP
   }
+  
+  // SysId
+  public static enum sysIdType {
+    LINEAR,
+    ANGULAR
+  }
 
+  public static enum subsystems {
+    SWERVE,
+    INTAKEPIVOT,
+    INTAKEROLLERS,
+    SHOOTERFLYWHEELS,
+    SHOOTERPIVOT,
+    CLIMBER
+  }
+  
   public static class kClimber {
     public static int climberID = 30;
 

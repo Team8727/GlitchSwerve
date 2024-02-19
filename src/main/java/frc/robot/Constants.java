@@ -37,9 +37,13 @@ public class Constants {
 
     // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
     // = SimpleMotorFeedforward(kS, kV, kA);
-    public static double kS = 0;
-    public static double kV = 0;
-    public static double kA = 0;
+    public static final double kS = 0;
+    public static final double kV = 0;
+    public static final double kA = 0;
+
+    public static final double kP = 0;
+    public static final double kD = 0;
+    
   }
 
   // Swerve subsystem constants (module constants included)

@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
@@ -43,6 +44,10 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
+
+    driverController
+        .a()
+        .whileTrue(Commands.deferredProxy(() -> sysIdRoutines.getSelector().getSelected()));
   }
 
   @Override
@@ -85,6 +90,9 @@ public class Robot extends TimedRobot implements Logged {
     autoCommand = autos.getSelector().getSelected();
     autos.getSelector().onChange((command) -> autoCommand = command);
     Shuffleboard.getTab("Auto").add("Auto selector", autos.getSelector());
+
+    // Start sysId selector
+    Shuffleboard.getTab("SysId").add("SysID selector", sysIdRoutines.getSelector());
   }
 
   @Override

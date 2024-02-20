@@ -526,26 +526,30 @@ public class Swerve extends SubsystemBase implements Logged {
 
   // AddVisionMeasurement With Two camera streams
   public void updatePoseWithCameraData() {
-    var cam1Result = camera1.getLatestResult();
-    if (cam1Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
-      double poseAmbiguity = cam1Result.getBestTarget().getPoseAmbiguity();
-      if (poseAmbiguity < 0.2
-          && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
-        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator1.update();
-        poseEstimator.addVisionMeasurement(
-            estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
-            estimatedGlobalPoseVision.get().timestampSeconds);
+    if (camera1.isConnected()) {
+      var cam1Result = camera1.getLatestResult();
+      if (cam1Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
+        double poseAmbiguity = cam1Result.getBestTarget().getPoseAmbiguity();
+        if (poseAmbiguity < 0.2
+            && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
+          Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator1.update();
+          poseEstimator.addVisionMeasurement(
+              estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
+              estimatedGlobalPoseVision.get().timestampSeconds);
+        }
       }
     }
-    var cam2Result = camera2.getLatestResult();
-    if (cam2Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
-      double poseAmbiguity = cam2Result.getBestTarget().getPoseAmbiguity();
-      if (poseAmbiguity < 0.2
-          && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
-        Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator2.update();
-        poseEstimator.addVisionMeasurement(
-            estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
-            estimatedGlobalPoseVision.get().timestampSeconds);
+    if (camera2.isConnected()) {
+      var cam2Result = camera2.getLatestResult();
+      if (cam2Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
+        double poseAmbiguity = cam2Result.getBestTarget().getPoseAmbiguity();
+        if (poseAmbiguity < 0.2
+            && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
+          Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator2.update();
+          poseEstimator.addVisionMeasurement(
+              estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
+              estimatedGlobalPoseVision.get().timestampSeconds);
+        }
       }
     }
   }

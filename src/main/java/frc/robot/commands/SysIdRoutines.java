@@ -26,7 +26,7 @@ public class SysIdRoutines {
   public SysIdRoutines(Swerve swerve) {
     this.swerve = swerve;
 
-    loadRoutines();
+    loadSwerveRoutines();
     populateSendable();
   }
 
@@ -34,7 +34,8 @@ public class SysIdRoutines {
   public SysIdRoutines(Swerve swerve, IntakePivot intakePivot) {
     this.swerve = swerve;
     this.intakePivot = intakePivot;
-    loadRoutines();
+    loadIntakePivotRoutines();
+    loadSwerveRoutines();
     populateSendable();
   }
 
@@ -48,13 +49,16 @@ public class SysIdRoutines {
     this.intakePivot = intakePivot;
     this.shooterFlywheels = shooterFlywheels;
     this.shooterPivot = shooterPivot;
-    loadRoutines();
+    loadSwerveRoutines();
+    loadIntakePivotRoutines();
+    loadShooterFlywheelRoutines();
+    loadShooterPivotRoutines();
     populateSendable();
   }
 
   // Loads all necessary routine permutations into a Hashmap
-  private void loadRoutines() {
-    routines.put("No Routine", Commands.waitSeconds(100));
+  private void loadSwerveRoutines() {
+    routines.put("No Routine", Commands.waitSeconds(2));
 
     // Linear Swerve Routines
     routines.put(
@@ -63,8 +67,10 @@ public class SysIdRoutines {
     routines.put(
         "swerveLinearReverseQuasistatic",
         swerve.getLinearRoutine().quasistatic(Direction.kReverse));
-    routines.put("linearForwardDynamic", swerve.getLinearRoutine().dynamic(Direction.kForward));
-    routines.put("linearReverseDynamic", swerve.getLinearRoutine().dynamic(Direction.kReverse));
+    routines.put(
+        "swerveLinearForwardDynamic", swerve.getLinearRoutine().dynamic(Direction.kForward));
+    routines.put(
+        "swerveLinearReverseDynamic", swerve.getLinearRoutine().dynamic(Direction.kReverse));
 
     // Angular Swerve Routines
     routines.put(
@@ -73,10 +79,14 @@ public class SysIdRoutines {
     routines.put(
         "swerveAngularReverseQuasistatic",
         swerve.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put("angularForwardDynamic", swerve.getAngularRoutine().dynamic(Direction.kForward));
-    routines.put("angularReverseDynamic", swerve.getAngularRoutine().dynamic(Direction.kReverse));
+    routines.put(
+        "swerveAngularForwardDynamic", swerve.getAngularRoutine().dynamic(Direction.kForward));
+    routines.put(
+        "swerveAngularReverseDynamic", swerve.getAngularRoutine().dynamic(Direction.kReverse));
+  }
 
-    // IntakePivtot
+  public void loadIntakePivotRoutines() {
+    // IntakePivot
     routines.put(
         "intakePivotForwardQuasistatic",
         intakePivot.getAngularRoutine().quasistatic(Direction.kForward));
@@ -87,7 +97,9 @@ public class SysIdRoutines {
         "intakePivotForwardDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kForward));
     routines.put(
         "intakePivotReverseDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kReverse));
+  }
 
+  public void loadShooterPivotRoutines() {
     // ShooterPivot
     routines.put(
         "shooterPivotForwardQuasistatic",
@@ -99,7 +111,9 @@ public class SysIdRoutines {
         "shooterPivotForwardDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kForward));
     routines.put(
         "shooterPivotReverseDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kReverse));
+  }
 
+  public void loadShooterFlywheelRoutines() {
     // ShooterFlywheels
     routines.put(
         "shooterFlywheelsForwardQuasistatic",

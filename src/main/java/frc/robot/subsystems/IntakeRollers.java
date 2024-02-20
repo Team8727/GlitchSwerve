@@ -26,7 +26,7 @@ public class IntakeRollers extends SubsystemBase {
             Set.of(),
             Set.of(LogData.CURRENT, LogData.VOLTAGE));
     intakeMotor.setIdleMode(IdleMode.kBrake);
-    pieceCheck = new DigitalInput(kRollers.boolSensorChannel);
+    pieceCheck = new DigitalInput(kRollers.sensorChannel);
   }
 
   public Command runRollers(double volts) {
@@ -34,6 +34,6 @@ public class IntakeRollers extends SubsystemBase {
   }
 
   public boolean getPieceCheck() {
-    return pieceCheck.get();
+    return !pieceCheck.get(); //Invert because of sensor
   }
 }

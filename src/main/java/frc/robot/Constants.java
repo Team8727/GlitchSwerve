@@ -225,7 +225,7 @@ public class Constants {
 
     public static class kRollers {
       public static int rollerMotorID = 21; // TODO GET REAL ID
-      public static int boolSensorChannel = 100; // TODO get real channel
+      public static int sensorChannel = 100; // TODO get real channel
     }
   }
 
@@ -276,7 +276,7 @@ public class Constants {
         public static double kP = 0;
         public static double kD = 0;
       }
-
+      public static int sensorChannel = 1;
       public static double encoderPositionFactor = (2 * Math.PI);
     }
   }

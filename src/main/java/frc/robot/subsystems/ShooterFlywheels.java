@@ -6,17 +6,21 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
+import java.util.Set;
+
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder.Type;
 import com.revrobotics.SparkPIDController;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -25,7 +29,6 @@ import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
-import java.util.Set;
 
 public class ShooterFlywheels extends SubsystemBase {
   // Motor Controllers
@@ -43,6 +46,11 @@ public class ShooterFlywheels extends SubsystemBase {
   // PID Controllers
   private final SparkPIDController fly1PID;
   private final SparkPIDController fly2PID;
+
+  //Sensor
+  private DigitalInput pieceCheck;
+
+  private boolean hasPiece = false;
 
   // SysId
   private final SysIdRoutine angularRoutine;
@@ -124,6 +132,7 @@ public class ShooterFlywheels extends SubsystemBase {
                               (fly2Encoder.getVelocity() * Math.PI), RadiansPerSecond));
                 },
                 this));
+    pieceCheck = new DigitalInput(kFlywheels.sensorChannel);
   }
 
   public Command setRollerSpeed(double vel) { // TODO make sure inverted correctly
@@ -136,5 +145,17 @@ public class ShooterFlywheels extends SubsystemBase {
 
   public SysIdRoutine getAngularRoutine() {
     return angularRoutine;
+  }
+
+  public boolean getPieceCheck() {
+    return !pieceCheck.get(); //Invert because of sensor
+  }
+
+  public void setHasPiece(boolean piece){
+    hasPiece = piece;
+  }
+
+  public Command intakeCommand(){
+    return setRollerSpeed(kFlywheels.intakeVel).until(() -> getPieceCheck()).finallyDo(() -> setHasPiece(true));
   }
 }

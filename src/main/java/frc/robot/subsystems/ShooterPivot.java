@@ -27,8 +27,9 @@ import frc.robot.Constants.kShooter.kPivot;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
+import monologue.Logged;
 
-public class ShooterPivot extends SubsystemBase {
+public class ShooterPivot extends SubsystemBase implements Logged {
   // Motorcontrollers
   private final CANSparkMax pivotMotor1;
   private final CANSparkMax pivotMotor2;

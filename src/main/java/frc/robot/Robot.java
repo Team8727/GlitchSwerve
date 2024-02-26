@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
@@ -26,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Set;
 import monologue.Logged;
 import monologue.Monologue;
 
@@ -41,13 +43,11 @@ public class Robot extends TimedRobot implements Logged {
 
   // Auto Objects
   private AutoRoutines autos = new AutoRoutines(swerve);
-  private Command autoCommand = null;
-
-  // SysId Objects
-  private SysIdRoutines sysIdRoutines = new SysIdRoutines(swerve, intakePivot);
+  private Command autoCommand;
+  private SysIdRoutines sysIdRoutines;
 
   // Bind commands to triggers
-  private void configureBindings() {
+  private void configureTeleopBindings() {
     // Default telop drive command
     swerve.setDefaultCommand(
         swerve.teleopDriveCommand(
@@ -81,6 +81,20 @@ public class Robot extends TimedRobot implements Logged {
                 .outtakeCommand()
                 .alongWith(shooterFlywheels.intakeCommand())
                 .until(() -> shooterFlywheels.getPieceCheck()));
+  }
+
+  // Bind commands to triggers
+  private void configureSysIdBindings() {
+    // Default telop drive command
+    swerve.setDefaultCommand(
+        swerve.teleopDriveCommand(
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX(),
+            driverController.getHID()::getLeftBumper));
+
+    driverController.rightStick().onTrue(swerve.zeroGyroCommand());
+    driverController.a().whileTrue(Commands.deferredProxy(sysIdRoutines::getCommand));
   }
 
   @Override
@@ -117,7 +131,11 @@ public class Robot extends TimedRobot implements Logged {
     Monologue.setFileOnly(DriverStation.isFMSAttached() ? true : Constants.logFileOnly);
 
     // Configure command bindings
-    configureBindings();
+    if (Constants.testMode != Constants.TestMode.SYSID) configureTeleopBindings();
+    else if (Constants.testMode == Constants.TestMode.SYSID) {
+      sysIdRoutines = new SysIdRoutines(Set.of(swerve));
+      configureSysIdBindings();
+    }
 
     // Configure automated commands
     configureCommands();

@@ -1,144 +1,80 @@
 package frc.robot.commands;
 
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-import frc.robot.subsystems.IntakePivot;
-import frc.robot.subsystems.ShooterFlywheels;
-import frc.robot.subsystems.ShooterPivot;
-import frc.robot.subsystems.Swerve;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import frc.robot.utilities.Characterizable;
+import java.util.Set;
 
 public class SysIdRoutines {
 
-  private Swerve swerve;
-  private IntakePivot intakePivot;
-  private ShooterFlywheels shooterFlywheels;
-  private ShooterPivot shooterPivot;
+  @SuppressWarnings("unused")
+  private Set<Characterizable> subsystems;
 
   // Hashmaps for both storing routines and for the selector
-  private final LinkedHashMap<String, Command> routines = new LinkedHashMap<String, Command>();
-  private final SendableChooser<Command> selector = new SendableChooser<Command>();
+  private final SendableChooser<Characterizable> subsystemSelector =
+      new SendableChooser<Characterizable>();
+  private final SendableChooser<SysIdType> typeSelector = new SendableChooser<SysIdType>();
+  private final SendableChooser<String> testSelector = new SendableChooser<String>();
 
-  // When only swerve exists
-  public SysIdRoutines(Swerve swerve) {
-    this.swerve = swerve;
+  private SysIdRoutine currentRoutine;
 
-    loadSwerveRoutines();
-    populateSendable();
+  // Routine Types
+  public static enum SysIdType {
+    LINEAR,
+    ANGULAR,
+    LINEARALTERNATE
   }
 
-  // When both the swerve and intake exist
-  public SysIdRoutines(Swerve swerve, IntakePivot intakePivot) {
-    this.swerve = swerve;
-    this.intakePivot = intakePivot;
-    loadIntakePivotRoutines();
-    loadSwerveRoutines();
-    populateSendable();
-  }
+  public SysIdRoutines(Set<Characterizable> subsystems) {
+    this.subsystems = subsystems;
 
-  // When Swerve Intake and Shooter All exist
-  public SysIdRoutines(
-      Swerve swerve,
-      IntakePivot intakePivot,
-      ShooterFlywheels shooterFlywheels,
-      ShooterPivot shooterPivot) {
-    this.swerve = swerve;
-    this.intakePivot = intakePivot;
-    this.shooterFlywheels = shooterFlywheels;
-    this.shooterPivot = shooterPivot;
-    loadSwerveRoutines();
-    loadIntakePivotRoutines();
-    loadShooterFlywheelRoutines();
-    loadShooterPivotRoutines();
-    populateSendable();
-  }
-
-  // Loads all necessary routine permutations into a Hashmap
-  private void loadSwerveRoutines() {
-    routines.put("No Routine", Commands.waitSeconds(2));
-
-    // Linear Swerve Routines
-    routines.put(
-        "swerveLinearForwardQuasistatic",
-        swerve.getLinearRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "swerveLinearReverseQuasistatic",
-        swerve.getLinearRoutine().quasistatic(Direction.kReverse));
-    routines.put(
-        "swerveLinearForwardDynamic", swerve.getLinearRoutine().dynamic(Direction.kForward));
-    routines.put(
-        "swerveLinearReverseDynamic", swerve.getLinearRoutine().dynamic(Direction.kReverse));
-
-    // Angular Swerve Routines
-    routines.put(
-        "swerveAngularForwardQuasistatic",
-        swerve.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "swerveAngularReverseQuasistatic",
-        swerve.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "swerveAngularForwardDynamic", swerve.getAngularRoutine().dynamic(Direction.kForward));
-    routines.put(
-        "swerveAngularReverseDynamic", swerve.getAngularRoutine().dynamic(Direction.kReverse));
-  }
-
-  public void loadIntakePivotRoutines() {
-    // IntakePivot
-    routines.put(
-        "intakePivotForwardQuasistatic",
-        intakePivot.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "intakePivotReverseQuasistatic",
-        intakePivot.getAngularRoutine().quasistatic(Direction.kReverse));
-    routines.put(
-        "intakePivotForwardDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kForward));
-    routines.put(
-        "intakePivotReverseDynamic", intakePivot.getAngularRoutine().dynamic(Direction.kReverse));
-  }
-
-  public void loadShooterPivotRoutines() {
-    // ShooterPivot
-    routines.put(
-        "shooterPivotForwardQuasistatic",
-        shooterPivot.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "shooterPivotReverseQuasistatic",
-        shooterPivot.getAngularRoutine().quasistatic(Direction.kReverse));
-    routines.put(
-        "shooterPivotForwardDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kForward));
-    routines.put(
-        "shooterPivotReverseDynamic", shooterPivot.getAngularRoutine().dynamic(Direction.kReverse));
-  }
-
-  public void loadShooterFlywheelRoutines() {
-    // ShooterFlywheels
-    routines.put(
-        "shooterFlywheelsForwardQuasistatic",
-        shooterFlywheels.getAngularRoutine().quasistatic(Direction.kForward));
-    routines.put(
-        "shooterFlywheelsReverseQuasistatic",
-        shooterFlywheels.getAngularRoutine().quasistatic(Direction.kReverse));
-    routines.put(
-        "shooterFlywheelsForwardDynamic",
-        shooterFlywheels.getAngularRoutine().dynamic(Direction.kForward));
-    routines.put(
-        "shooterFlywheelsReverseDynamic",
-        shooterFlywheels.getAngularRoutine().dynamic(Direction.kReverse));
-  }
-
-  // Adds all the Commands to the sendable chooser
-  private void populateSendable() {
-    selector.setDefaultOption("No Routine", routines.get("No Routine"));
-    for (Map.Entry<String, Command> entry : routines.entrySet()) {
-      selector.addOption(entry.getKey(), entry.getValue());
+    subsystemSelector.setDefaultOption("No Subsystem", null);
+    for (var subsystem : subsystems) {
+      subsystemSelector.addOption(subsystem.getName(), subsystem);
     }
+
+    testSelector.addOption("Forward Static", "forwardStatic");
+    testSelector.addOption("Reverse Static", "reverseStatic");
+    testSelector.addOption("Forward Dynamic", "forwardDynamic");
+    testSelector.addOption("Reverse Dynamic", "reverseDynamic");
+
+    for (SysIdType type : SysIdType.values()) {
+      typeSelector.addOption(type.name(), type);
+    }
+
+    var sysIdTab = Shuffleboard.getTab("SysId");
+    sysIdTab.add("Subsystem", subsystemSelector);
+    sysIdTab.add("Test Direction", testSelector);
+    sysIdTab.add("Test Type", typeSelector);
+
+    subsystemSelector.onChange(
+        subsystem -> currentRoutine = subsystem.getRoutine(typeSelector.getSelected()));
+    typeSelector.onChange(
+        type -> currentRoutine = subsystemSelector.getSelected().getRoutine(type));
   }
 
-  // Retuns the SendableChooser of commands
-  public SendableChooser<Command> getSelector() {
-    return selector;
+  public Command getCommand() {
+    if (subsystemSelector.getSelected() == null || currentRoutine == null) return Commands.none();
+
+    switch (testSelector.getSelected()) {
+      case "forwardStatic":
+        return currentRoutine.quasistatic(Direction.kForward);
+
+      case "reverseStatic":
+        return currentRoutine.quasistatic(Direction.kReverse);
+
+      case "forwardDynamic":
+        return currentRoutine.dynamic(Direction.kForward);
+
+      case "reverseDynamic":
+        return currentRoutine.dynamic(Direction.kReverse);
+
+      default:
+        return Commands.none();
+    }
   }
 }

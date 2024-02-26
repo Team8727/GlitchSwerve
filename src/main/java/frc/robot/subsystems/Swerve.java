@@ -3,6 +3,8 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.kauailabs.navx.frc.AHRS;
@@ -26,7 +28,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
@@ -36,6 +40,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -44,6 +49,8 @@ import frc.robot.Constants.kOI;
 import frc.robot.Constants.kSwerve;
 import frc.robot.Constants.kSwerve.Auton;
 import frc.robot.Constants.kSwerve.kModule;
+import frc.robot.commands.SysIdRoutines.SysIdType;
+import frc.robot.utilities.Characterizable;
 import frc.robot.utilities.ChassisLimiter;
 import frc.robot.utilities.MAXSwerve;
 import java.util.Optional;
@@ -56,7 +63,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
-public class Swerve extends SubsystemBase implements Logged {
+public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // Hardware
   private final MAXSwerve frontLeftModule =
       new MAXSwerve(
@@ -123,126 +130,6 @@ public class Swerve extends SubsystemBase implements Logged {
   private AprilTagFieldLayout fieldLayout;
   private PhotonPoseEstimator photonPoseEstimator1;
   private PhotonPoseEstimator photonPoseEstimator2;
-
-  // SysId Objects
-  // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
-  private final MutableMeasure<Voltage> m_appliedVoltage = mutable(Volts.of(0));
-  // Mutable holder for unit-safe linear distance values, persisted to avoid reallocation.
-  private final MutableMeasure<Distance> m_distance = mutable(Meters.of(0));
-  // Mutable holder for unit-safe linear velocity values, persisted to avoid reallocation.
-  private final MutableMeasure<Velocity<Distance>> m_velocity = mutable(MetersPerSecond.of(0));
-
-  private final SysIdRoutine linearRoutine =
-      new SysIdRoutine(
-          new SysIdRoutine.Config(),
-          new SysIdRoutine.Mechanism(
-              (volts) -> {
-                // Set all the wheels to one direction
-                frontLeftModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                backLeftModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                frontRightModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                backRightModule.setTargetState(new SwerveModuleState(0, new Rotation2d(0)), false);
-                // apply the voltage
-                frontLeftModule.setRawDriveVoltage(volts.magnitude());
-                backLeftModule.setRawDriveVoltage(volts.magnitude());
-                frontRightModule.setRawDriveVoltage(volts.magnitude());
-                backRightModule.setRawDriveVoltage(volts.magnitude());
-              },
-              (log) -> {
-                log.motor("frontLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            frontLeftModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(frontLeftModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            frontLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("backLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(backLeftModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(backLeftModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            backLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("frontRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            frontRightModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(
-                            frontRightModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            frontRightModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("backRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            backRightModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(backRightModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            backRightModule.getState().speedMetersPerSecond, MetersPerSecond));
-              },
-              this));
-
-  private final SysIdRoutine angularRoutine =
-      new SysIdRoutine(
-          new SysIdRoutine.Config(),
-          new SysIdRoutine.Mechanism(
-              (volts) -> {
-                // Set all the wheels to one direction
-                frontLeftModule.setO();
-                backLeftModule.setO();
-                frontRightModule.setO();
-                backRightModule.setO();
-                // apply the voltage
-                frontLeftModule.setRawDriveVoltage(volts.magnitude());
-                backLeftModule.setRawDriveVoltage(volts.magnitude());
-                frontRightModule.setRawDriveVoltage(volts.magnitude());
-                backRightModule.setRawDriveVoltage(volts.magnitude());
-              },
-              (log) -> {
-                log.motor("frontLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            frontLeftModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(frontLeftModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            frontLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("backLeft")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(backLeftModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(backLeftModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            backLeftModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("frontRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            frontRightModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(
-                            frontRightModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            frontRightModule.getState().speedMetersPerSecond, MetersPerSecond));
-                log.motor("backRight")
-                    .voltage(
-                        m_appliedVoltage.mut_replace(
-                            backRightModule.getRawDriveNeoVoltage(), Volts))
-                    .linearPosition(
-                        m_distance.mut_replace(backRightModule.getPositon().distanceMeters, Meters))
-                    .linearVelocity(
-                        m_velocity.mut_replace(
-                            backRightModule.getState().speedMetersPerSecond, MetersPerSecond));
-              },
-              this));
 
   public Swerve() {
     // Setup controls objects
@@ -462,12 +349,40 @@ public class Swerve extends SubsystemBase implements Logged {
   }
 
   // ---------- SysId Commands ----------
-  public SysIdRoutine getLinearRoutine() {
-    return linearRoutine;
-  }
+  public SysIdRoutine getRoutine(SysIdType routineType) {
+    MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
 
-  public SysIdRoutine getAngularRoutine() {
-    return angularRoutine;
+    if (routineType == SysIdType.ANGULAR) {
+      MutableMeasure<Angle> angle = mutable(Radians.of(0));
+      MutableMeasure<Velocity<Angle>> angularVelocity = mutable(RadiansPerSecond.of(0));
+      return new SysIdRoutine(
+          new SysIdRoutine.Config(),
+          new SysIdRoutine.Mechanism(
+              (volts) -> setStateSysId(volts, routineType),
+              (log) -> {
+                log.motor("Chassis")
+                    .voltage(
+                        appliedVoltage.mut_replace(frontLeftModule.getRawDriveNeoVoltage(), Volts))
+                    .angularPosition(angle.mut_replace(getGyro().getRadians(), Radians))
+                    .angularVelocity(
+                        angularVelocity.mut_replace(getGyroYawRate(), RadiansPerSecond));
+              },
+              this));
+    } else {
+      MutableMeasure<Distance> distance = mutable(Meters.of(0));
+      MutableMeasure<Velocity<Distance>> velocity = mutable(MetersPerSecond.of(0));
+      return new SysIdRoutine(
+          new SysIdRoutine.Config(),
+          new SysIdRoutine.Mechanism(
+              (volts) -> setStateSysId(volts, routineType),
+              (log) -> {
+                logModuleSysId(log, frontLeftModule, appliedVoltage, distance, velocity);
+                logModuleSysId(log, backLeftModule, appliedVoltage, distance, velocity);
+                logModuleSysId(log, backRightModule, appliedVoltage, distance, velocity);
+                logModuleSysId(log, frontRightModule, appliedVoltage, distance, velocity);
+              },
+              this));
+    }
   }
 
   // ---------- Public interface methods ----------
@@ -665,5 +580,41 @@ public class Swerve extends SubsystemBase implements Logged {
     // Construct chassis speeds and return
     return new ChassisSpeeds(
         translationVelocity.get(0, 0), translationVelocity.get(1, 0), zRotation);
+  }
+
+  private void setStateSysId(Measure<Voltage> volts, SysIdType type) {
+    // Set all the wheels to one direction
+    if (type == SysIdType.ANGULAR) {
+      frontLeftModule.setO();
+      backLeftModule.setO();
+      frontRightModule.setO();
+      backRightModule.setO();
+    } else {
+      var direction =
+          (type == SysIdType.LINEAR) ? Rotation2d.fromDegrees(45) : Rotation2d.fromDegrees(-45);
+      frontLeftModule.setTargetState(new SwerveModuleState(0, direction), false);
+      backLeftModule.setTargetState(new SwerveModuleState(0, direction), false);
+      frontRightModule.setTargetState(new SwerveModuleState(0, direction), false);
+      backRightModule.setTargetState(new SwerveModuleState(0, direction), false);
+    }
+
+    // apply the voltage
+    frontLeftModule.setRawDriveVoltage(volts.magnitude());
+    backLeftModule.setRawDriveVoltage(volts.magnitude());
+    frontRightModule.setRawDriveVoltage(volts.magnitude());
+    backRightModule.setRawDriveVoltage(volts.magnitude());
+  }
+
+  private void logModuleSysId(
+      SysIdRoutineLog log,
+      MAXSwerve module,
+      MutableMeasure<Voltage> appliedVoltage,
+      MutableMeasure<Distance> distance,
+      MutableMeasure<Velocity<Distance>> velocity) {
+    log.motor(module.toString())
+        .voltage(appliedVoltage.mut_replace(module.getRawDriveNeoVoltage(), Volts))
+        .linearPosition(distance.mut_replace(module.getPositon().distanceMeters, Meters))
+        .linearVelocity(
+            velocity.mut_replace(module.getState().speedMetersPerSecond, MetersPerSecond));
   }
 }

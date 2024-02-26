@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kFlywheels;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
+import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
@@ -43,20 +44,6 @@ public class ShooterFlywheels extends SubsystemBase {
   // PID Controllers
   private final SparkPIDController fly1PID;
   private final SparkPIDController fly2PID;
-
-  // Sensor
-  // private DigitalInput pieceCheck;
-
-  private boolean hasPiece = false;
-
-  // SysId
-  private final SysIdRoutine angularRoutine;
-  // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
-  private final MutableMeasure<Voltage> m_appliedVoltage = mutable(Volts.of(0));
-  // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
-  private final MutableMeasure<Angle> m_angle = mutable(Radians.of(0));
-  // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
-  private final MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
 
   public ShooterFlywheels() {
     flywheel1 =
@@ -99,37 +86,6 @@ public class ShooterFlywheels extends SubsystemBase {
     fly2PID.setOutputRange(kFlywheel2.minPIDOutput, kFlywheel2.maxPIDOutput);
     fly2PID.setP(kFlywheel2.kP);
     fly2PID.setD(kFlywheel2.kD);
-
-    // SysId
-    angularRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(),
-            new SysIdRoutine.Mechanism(
-                (volts) -> {
-                  flywheel1.setVoltage(volts.magnitude());
-                  flywheel2.setVoltage(volts.magnitude());
-                },
-                (log) -> {
-                  fly1Encoder.setVelocityConversionFactor(Math.PI);
-                  fly2Encoder.setVelocityConversionFactor(Math.PI);
-
-                  log.motor("flywheel1Motor")
-                      .voltage(m_appliedVoltage.mut_replace(flywheel1.getBusVoltage(), Volts))
-                      .angularPosition(
-                          m_angle.mut_replace(fly1Encoder.getPosition() * Math.PI, Radians))
-                      .angularVelocity(
-                          m_velocity.mut_replace(
-                              (fly1Encoder.getVelocity() * Math.PI), RadiansPerSecond));
-                  log.motor("flywheel2Motor")
-                      .voltage(m_appliedVoltage.mut_replace(flywheel2.getBusVoltage(), Volts))
-                      .angularPosition(
-                          m_angle.mut_replace(fly2Encoder.getPosition() * Math.PI, Radians))
-                      .angularVelocity(
-                          m_velocity.mut_replace(
-                              (fly2Encoder.getVelocity() * Math.PI), RadiansPerSecond));
-                },
-                this));
-    // pieceCheck = new DigitalInput(kFlywheels.sensorChannel);
   }
 
   public Command setRollerSpeed(double vel) { // TODO make sure inverted correctly
@@ -140,8 +96,38 @@ public class ShooterFlywheels extends SubsystemBase {
         });
   }
 
-  public SysIdRoutine getAngularRoutine() {
-    return angularRoutine;
+  public SysIdRoutine getRoutine(SysIdType type) {
+    // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
+    MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
+    // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
+    MutableMeasure<Angle> angle = mutable(Radians.of(0));
+    // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
+    MutableMeasure<Velocity<Angle>> velocity = mutable(RadiansPerSecond.of(0));
+    return new SysIdRoutine(
+        new SysIdRoutine.Config(),
+        new SysIdRoutine.Mechanism(
+            (volts) -> {
+              flywheel1.setVoltage(volts.magnitude());
+              flywheel2.setVoltage(volts.magnitude());
+            },
+            (log) -> {
+              fly1Encoder.setVelocityConversionFactor(Math.PI);
+              fly2Encoder.setVelocityConversionFactor(Math.PI);
+
+              log.motor("flywheel1Motor")
+                  .voltage(appliedVoltage.mut_replace(flywheel1.getBusVoltage(), Volts))
+                  .angularPosition(angle.mut_replace(fly1Encoder.getPosition() * Math.PI, Radians))
+                  .angularVelocity(
+                      velocity.mut_replace(
+                          (fly1Encoder.getVelocity() * Math.PI), RadiansPerSecond));
+              log.motor("flywheel2Motor")
+                  .voltage(appliedVoltage.mut_replace(flywheel2.getBusVoltage(), Volts))
+                  .angularPosition(angle.mut_replace(fly2Encoder.getPosition() * Math.PI, Radians))
+                  .angularVelocity(
+                      velocity.mut_replace(
+                          (fly2Encoder.getVelocity() * Math.PI), RadiansPerSecond));
+            },
+            this));
   }
 
   public boolean getPieceCheck() {

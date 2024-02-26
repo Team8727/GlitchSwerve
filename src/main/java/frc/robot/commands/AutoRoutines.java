@@ -12,8 +12,10 @@ public class AutoRoutines {
   @SuppressWarnings("unused")
   private final Swerve swerve;
 
+  @SuppressWarnings("unused")
   private final LinkedHashMap<String, PathPlannerPath> paths =
       new LinkedHashMap<String, PathPlannerPath>();
+
   private final LinkedHashMap<String, Command> routines = new LinkedHashMap<String, Command>();
   private final SendableChooser<Command> selector = new SendableChooser<Command>();
 
@@ -31,9 +33,7 @@ public class AutoRoutines {
      ex:
      paths.put("Crazy auto", swerve.followPathWithEventsCommand(paths.get("crazy_auto")));
   */
-  private void loadPaths() {
-    paths.put("path", PathPlannerPath.fromPathFile("path"));
-  }
+  private void loadPaths() {}
 
   // Add commands to PathPlanner in this form:
   // NamedCommands.registerCommand("<Name>", <command>);

@@ -4,21 +4,25 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.SysIdRoutines;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
+import frc.robot.subsystems.ShooterPivot;
 import frc.robot.subsystems.Swerve;
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,23 +30,26 @@ import java.io.FileReader;
 import java.io.IOException;
 import monologue.Logged;
 import monologue.Monologue;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
 
-  //Subsystems
+  // Subsystems
   private Swerve swerve = new Swerve();
   private IntakeRollers intakeRollers = new IntakeRollers();
   private IntakePivot intakePivot = new IntakePivot();
   private ShooterFlywheels shooterFlywheels = new ShooterFlywheels();
-  
-  //Auto Objects
+  private ShooterPivot shooterPivot = new ShooterPivot();
+
+  // Auto Objects
   private AutoRoutines autos = new AutoRoutines(swerve);
   private Command autoCommand = null;
 
-  //SysId Objects
+  // SysId Objects
   private SysIdRoutines sysIdRoutines = new SysIdRoutines(swerve, intakePivot);
+
+  private ShuffleboardTab tab = Shuffleboard.getTab("IntakePivotVolts");
+  private GenericEntry voltageEnry = tab.add("Volts", 0).getEntry();
 
   // Bind commands to triggers
   private void configureBindings() {
@@ -53,23 +60,29 @@ public class Robot extends TimedRobot implements Logged {
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX(),
             driverController.getHID()::getLeftBumper));
-    
-    //Sets the default position to be home
+
+    // Sets the default position to be home
     intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
+    shooterPivot.setDefaultCommand(shooterPivot.setShooterHome());
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
-    /* 
+
+    /*
     driverController
         .a()
         .whileTrue(Commands.deferredProxy(() -> sysIdRoutines.getSelector().getSelected()));*/
-    
-    driverController.b().whileTrue(intakePivot.setIntakeDown(true).alongWith(intakeRollers.intakeCommand()));
-    
+
+    driverController.a().whileTrue(intakePivot.setVoltageTest(() -> voltageEnry.getDouble(0)));
+    driverController
+        .b()
+        .whileTrue(intakePivot.setIntakeDown(true).alongWith(intakeRollers.intakeCommand()));
   }
 
-  private void configureCommands(){
-    new Trigger(intakeRollers::getPieceCheck).and(() -> !shooterFlywheels.getPieceCheck()).onTrue(intakeRollers.outtakeCommand().alongWith(shooterFlywheels.intakeCommand()));
+  private void configureCommands() {
+    new Trigger(intakeRollers::getPieceCheck)
+        .and(() -> !shooterFlywheels.getPieceCheck())
+        .onTrue(intakeRollers.outtakeCommand().alongWith(shooterFlywheels.intakeCommand()));
   }
 
   @Override

@@ -35,20 +35,24 @@ public class IntakeRollers extends SubsystemBase {
   public Command runRollers(double volts) {
     return this.run(() -> intakeMotor.setVoltage(volts));
   }
-  
+
   public boolean getPieceCheck() {
-    return !pieceCheck.get(); //Invert because of sensor
+    return !pieceCheck.get(); // Invert because of sensor
   }
 
-  private void setHasPiece(boolean piece){
+  private void setHasPiece(boolean piece) {
     hasPiece = piece;
   }
 
-  public Command intakeCommand(){
-    return runRollers(kRollers.intakeVoltage).until(() -> getPieceCheck()).finallyDo(() -> setHasPiece(true));
+  public Command intakeCommand() {
+    return runRollers(kRollers.intakeVoltage)
+        .until(() -> getPieceCheck())
+        .finallyDo(() -> setHasPiece(true));
   }
 
-  public Command outtakeCommand(){
-    return runRollers(kRollers.outtakeVoltage).until(() -> getPieceCheck()).andThen(runRollers(kRollers.outtakeVoltage).withTimeout(kRollers.delayForOuttake));
+  public Command outtakeCommand() {
+    return runRollers(kRollers.outtakeVoltage)
+        .until(() -> getPieceCheck())
+        .andThen(runRollers(kRollers.outtakeVoltage).withTimeout(kRollers.delayForOuttake));
   }
 }

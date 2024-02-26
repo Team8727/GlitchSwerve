@@ -27,6 +27,7 @@ import frc.robot.Constants.kShooter.kPivot;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
+import monologue.Annotations.Log;
 import monologue.Logged;
 
 public class ShooterPivot extends SubsystemBase implements Logged {
@@ -79,14 +80,14 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
     // Encoder Configs
     pivotEncoder = pivotMotor1.getAbsoluteEncoder(Type.kDutyCycle);
-    pivotEncoder.setPositionConversionFactor(kPivot.intakePivotEncoderPositionFactor);
+    pivotEncoder.setPositionConversionFactor(kPivot.shooterPivotEncoderPositionFactor);
+    pivotEncoder.setVelocityConversionFactor(kPivot.shooterPivotEncoderVelocityFactor);
     pivotEncoder.setInverted(false);
 
     // PID Configs
     pivotPID = pivotMotor1.getPIDController();
     pivotPID.setFeedbackDevice(pivotEncoder);
     pivotPID.setOutputRange(kPivot.minPIDOutput, kPivot.maxPIDOutput);
-    pivotPID.setPositionPIDWrappingEnabled(false);
     pivotPID.setP(kPivot.kP);
     pivotPID.setD(kPivot.kD);
 
@@ -112,7 +113,6 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   }
 
   private TrapezoidProfile.State calculateSetpoint(double posRad) {
-    goal = new TrapezoidProfile.State(posRad, 0);
     setpoint = profile.calculate(kPivot.period, setpoint, goal);
     return setpoint;
   }
@@ -124,6 +124,8 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   // Set position input radians
   public Command setIntakePivotPos(double posRad) {
+    setpoint.position = pivotEncoder.getPosition();
+    goal = new TrapezoidProfile.State(posRad, 0);
     return this.run(
             () -> {
               TrapezoidProfile.State pos = calculateSetpoint(posRad);
@@ -136,8 +138,43 @@ public class ShooterPivot extends SubsystemBase implements Logged {
         .until(this::getDone);
   }
 
+  public Command setShooterHome() {
+    return setIntakePivotPos(kPivot.homeRad);
+  }
+
   // Get SysID Routine
   public SysIdRoutine getAngularRoutine() {
     return angularRoutine;
+  }
+
+  // Logging
+  @Log.NT
+  public double getEncoderPos() {
+    return pivotEncoder.getPosition();
+  }
+
+  @Log.NT
+  public double getEncoderVel() {
+    return pivotEncoder.getVelocity();
+  }
+
+  @Log.NT
+  public double getGoal() {
+    return goal.position;
+  }
+
+  @Log.NT
+  public double getSetpointPos() {
+    return setpoint.position;
+  }
+
+  @Log.NT
+  public double getSetpointVel() {
+    return setpoint.velocity;
+  }
+
+  @Log.NT
+  public double getAppliedVolts() {
+    return pivotMotor1.getBusVoltage() * pivotMotor1.getAppliedOutput();
   }
 }

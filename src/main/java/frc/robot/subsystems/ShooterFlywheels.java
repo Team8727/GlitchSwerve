@@ -6,15 +6,12 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
-import java.util.Set;
-
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder.Type;
 import com.revrobotics.SparkPIDController;
-
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.MutableMeasure;
@@ -29,6 +26,7 @@ import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
+import java.util.Set;
 
 public class ShooterFlywheels extends SubsystemBase {
   // Motor Controllers
@@ -47,7 +45,7 @@ public class ShooterFlywheels extends SubsystemBase {
   private final SparkPIDController fly1PID;
   private final SparkPIDController fly2PID;
 
-  //Sensor
+  // Sensor
   private DigitalInput pieceCheck;
 
   private boolean hasPiece = false;
@@ -148,14 +146,16 @@ public class ShooterFlywheels extends SubsystemBase {
   }
 
   public boolean getPieceCheck() {
-    return !pieceCheck.get(); //Invert because of sensor
+    return !pieceCheck.get(); // Invert because of sensor
   }
 
-  public void setHasPiece(boolean piece){
+  public void setHasPiece(boolean piece) {
     hasPiece = piece;
   }
 
-  public Command intakeCommand(){
-    return setRollerSpeed(kFlywheels.intakeVel).until(() -> getPieceCheck()).finallyDo(() -> setHasPiece(true));
+  public Command intakeCommand() {
+    return setRollerSpeed(kFlywheels.intakeVel)
+        .until(() -> getPieceCheck())
+        .finallyDo(() -> setHasPiece(true));
   }
 }

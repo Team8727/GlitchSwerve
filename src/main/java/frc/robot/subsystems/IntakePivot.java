@@ -30,6 +30,7 @@ import frc.robot.Constants.kIntake.kPivot;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
+import java.util.function.DoubleSupplier;
 import monologue.Annotations.Log;
 import monologue.Logged;
 
@@ -48,7 +49,7 @@ public class IntakePivot extends SubsystemBase implements Logged {
       new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel);
   private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
   private TrapezoidProfile.State goal = new TrapezoidProfile.State();
-  private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(0,0);
+  private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(0, 0);
 
   // SysId Objects
   // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
@@ -98,15 +99,15 @@ public class IntakePivot extends SubsystemBase implements Logged {
                 },
                 (log) -> {
                   log.motor("intakePivotMotor")
-                      .voltage(m_appliedVoltage.mut_replace(pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput(), Volts))
-                      .angularPosition(
-                          m_angle.mut_replace(pivotEncoder.getPosition(), Radians))
+                      .voltage(
+                          m_appliedVoltage.mut_replace(
+                              pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput(), Volts))
+                      .angularPosition(m_angle.mut_replace(pivotEncoder.getPosition(), Radians))
                       .angularVelocity(
                           m_velocity.mut_replace(
                               (pivotEncoder.getVelocity() * Math.PI), RadiansPerSecond));
                 },
                 this));
-    setpoint.position = pivotEncoder.getPosition();
   }
 
   // Acts as a filter calculating setpoints for the PID control
@@ -121,9 +122,10 @@ public class IntakePivot extends SubsystemBase implements Logged {
 
   // Set position input radians
   public Command setIntakePivotPos(double posRad) {
+    setpoint.position = pivotEncoder.getPosition();
+    goal = new TrapezoidProfile.State(posRad, 0);
     return this.run(
             () -> {
-              goal = new TrapezoidProfile.State(posRad, 0);
               TrapezoidProfile.State pos = calculateSetpoint();
               pivotPID.setReference(
                   pos.position,
@@ -134,46 +136,49 @@ public class IntakePivot extends SubsystemBase implements Logged {
         .until(this::getDone);
   }
 
-  public Command setIntakeDown(boolean setDown){
-    return setDown ? setIntakePivotPos(kPivot.intakeRadiansDown):setIntakePivotPos(kPivot.intakeRadiansHome);
+  public Command setIntakeDown(boolean setDown) {
+    return setDown
+        ? setIntakePivotPos(kPivot.intakeRadiansDown)
+        : setIntakePivotPos(kPivot.intakeRadiansHome);
   }
 
-  public Command setVoltageTest(double volts){
-    return this.startEnd(() -> pivotMotor.setVoltage(volts), () -> pivotMotor.setVoltage(0));
+  public Command setVoltageTest(DoubleSupplier volts) {
+    return this.startEnd(
+        () -> pivotMotor.setVoltage(volts.getAsDouble()), () -> pivotMotor.setVoltage(0));
   }
 
   public SysIdRoutine getAngularRoutine() {
     return angularRoutine;
   }
 
-  //Logging
-  @Log.NT 
-  public double getEncoderPos(){
+  // Logging
+  @Log.NT
+  public double getEncoderPos() {
     return pivotEncoder.getPosition();
   }
 
-  @Log.NT 
-  public double getEncoderVel(){
+  @Log.NT
+  public double getEncoderVel() {
     return pivotEncoder.getVelocity();
   }
 
-  @Log.NT 
-  public double getGoal(){
+  @Log.NT
+  public double getGoal() {
     return goal.position;
   }
 
-  @Log.NT 
-  public double getSetpointPos(){
+  @Log.NT
+  public double getSetpointPos() {
     return setpoint.position;
   }
 
-  @Log.NT 
-  public double getSetpointVel(){
+  @Log.NT
+  public double getSetpointVel() {
     return setpoint.velocity;
   }
 
-  @Log.NT 
-  public double getAppliedVolts(){
+  @Log.NT
+  public double getAppliedVolts() {
     return pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput();
   }
 }

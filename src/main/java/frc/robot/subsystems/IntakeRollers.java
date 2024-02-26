@@ -44,6 +44,10 @@ public class IntakeRollers extends SubsystemBase {
     hasPiece = piece;
   }
 
+  public boolean pieceState() {
+    return hasPiece;
+  }
+
   public Command intakeCommand() {
     return runRollers(kRollers.intakeVoltage)
         .until(() -> getPieceCheck())

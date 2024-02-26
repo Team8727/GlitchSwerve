@@ -8,12 +8,11 @@ import static frc.robot.utilities.SparkConfigurator.*;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase;
-import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder.Type;
-import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
@@ -38,18 +37,13 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   // Feedforwards
   private final ArmFeedforward pivotFF;
 
-  // PID controllers
-  private final SparkPIDController pivotPID;
-
   // Absolute Encoders
   private final AbsoluteEncoder pivotEncoder;
 
   // Profile Stuff
   private final TrapezoidProfile.Constraints constraints =
-      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel);
-  private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
-  private TrapezoidProfile.State goal = new TrapezoidProfile.State();
-  private TrapezoidProfile.State setpoint = new TrapezoidProfile.State();
+      new Constraints(kPivot.maxVel, kPivot.maxAccel);
+  private final ProfiledPIDController profiledPIDController;
 
   // SysId Objects
   // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
@@ -84,12 +78,8 @@ public class ShooterPivot extends SubsystemBase implements Logged {
     pivotEncoder.setVelocityConversionFactor(kPivot.shooterPivotEncoderVelocityFactor);
     pivotEncoder.setInverted(false);
 
-    // PID Configs
-    pivotPID = pivotMotor1.getPIDController();
-    pivotPID.setFeedbackDevice(pivotEncoder);
-    pivotPID.setOutputRange(kPivot.minPIDOutput, kPivot.maxPIDOutput);
-    pivotPID.setP(kPivot.kP);
-    pivotPID.setD(kPivot.kD);
+    // ProfiledPIDController
+    profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
 
     // SysId object
     angularRoutine =
@@ -112,30 +102,14 @@ public class ShooterPivot extends SubsystemBase implements Logged {
                 this));
   }
 
-  private TrapezoidProfile.State calculateSetpoint(double posRad) {
-    setpoint = profile.calculate(kPivot.period, setpoint, goal);
-    return setpoint;
-  }
-
-  private boolean getDone() {
-    return goal.position == pivotEncoder.getPosition()
-        && goal.velocity == pivotEncoder.getVelocity();
-  }
-
   // Set position input radians
   public Command setIntakePivotPos(double posRad) {
-    setpoint.position = pivotEncoder.getPosition();
-    goal = new TrapezoidProfile.State(posRad, 0);
     return this.run(
             () -> {
-              TrapezoidProfile.State pos = calculateSetpoint(posRad);
-              pivotPID.setReference(
-                  pos.position,
-                  ControlType.kPosition,
-                  0,
-                  pivotFF.calculate(pos.position, pos.velocity));
+              var setpoint = profiledPIDController.calculate(pivotEncoder.getPosition(), posRad);
+              pivotMotor1.setVoltage(pivotFF.calculate(posRad, setpoint) + setpoint);
             })
-        .until(this::getDone);
+        .until(() -> profiledPIDController.atGoal());
   }
 
   public Command setShooterHome() {
@@ -156,21 +130,6 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   @Log.NT
   public double getEncoderVel() {
     return pivotEncoder.getVelocity();
-  }
-
-  @Log.NT
-  public double getGoal() {
-    return goal.position;
-  }
-
-  @Log.NT
-  public double getSetpointPos() {
-    return setpoint.position;
-  }
-
-  @Log.NT
-  public double getSetpointVel() {
-    return setpoint.velocity;
   }
 
   @Log.NT

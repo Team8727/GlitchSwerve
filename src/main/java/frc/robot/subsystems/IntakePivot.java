@@ -10,12 +10,11 @@ import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase;
-import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkAbsoluteEncoder.Type;
-import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
@@ -40,16 +39,13 @@ public class IntakePivot extends SubsystemBase implements Logged {
   private final AbsoluteEncoder pivotEncoder;
 
   private final ArmFeedforward pivotFF;
-  private final SparkPIDController pivotPID;
 
   private final SysIdRoutine angularRoutine;
 
   // Profile Stuff
+  private final ProfiledPIDController profiledPIDController;
   private final TrapezoidProfile.Constraints constraints =
-      new Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel);
-  private final TrapezoidProfile profile = new TrapezoidProfile(constraints);
-  private TrapezoidProfile.State goal = new TrapezoidProfile.State();
-  private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(0, 0);
+      new Constraints(kPivot.maxVel, kPivot.maxAccel);
 
   // SysId Objects
   // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
@@ -58,7 +54,6 @@ public class IntakePivot extends SubsystemBase implements Logged {
   private final MutableMeasure<Angle> m_angle = mutable(Radians.of(0));
   // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
   private final MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
-
   private final MutableMeasure<Voltage> stepVoltage = mutable(Volts.of(4));
   private final MutableMeasure<Time> timout = mutable(Seconds.of(5));
 
@@ -79,15 +74,11 @@ public class IntakePivot extends SubsystemBase implements Logged {
     pivotEncoder.setVelocityConversionFactor(kPivot.intakePivotEncoderVelocityFactor);
     pivotEncoder.setInverted(false);
 
-    // PID Configs
-    pivotPID = pivotMotor.getPIDController();
-    pivotPID.setFeedbackDevice(pivotEncoder);
-    pivotPID.setOutputRange(kPivot.minPIDOutput, kPivot.maxPIDOutput);
-    pivotPID.setP(kPivot.kP);
-    pivotPID.setD(kPivot.kD);
-
     // Feedforward Configs
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
+
+    profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
+    profiledPIDController.reset(pivotEncoder.getPosition());
 
     // Angular Routine Configs
     angularRoutine =
@@ -110,30 +101,14 @@ public class IntakePivot extends SubsystemBase implements Logged {
                 this));
   }
 
-  // Acts as a filter calculating setpoints for the PID control
-  private TrapezoidProfile.State calculateSetpoint() {
-    setpoint = profile.calculate(kPivot.period, setpoint, goal);
-    return setpoint;
-  }
-
-  private boolean getDone() {
-    return goal.equals(setpoint);
-  }
-
   // Set position input radians
   public Command setIntakePivotPos(double posRad) {
-    setpoint.position = pivotEncoder.getPosition();
-    goal = new TrapezoidProfile.State(posRad, 0);
     return this.run(
             () -> {
-              TrapezoidProfile.State pos = calculateSetpoint();
-              pivotPID.setReference(
-                  pos.position,
-                  ControlType.kPosition,
-                  0,
-                  pivotFF.calculate(pos.position, pos.velocity));
+              var setpoint = profiledPIDController.calculate(pivotEncoder.getPosition(), posRad);
+              pivotMotor.setVoltage(pivotFF.calculate(posRad, setpoint) + setpoint);
             })
-        .until(this::getDone);
+        .until(() -> profiledPIDController.atGoal());
   }
 
   public Command setIntakeDown(boolean setDown) {
@@ -160,21 +135,6 @@ public class IntakePivot extends SubsystemBase implements Logged {
   @Log.NT
   public double getEncoderVel() {
     return pivotEncoder.getVelocity();
-  }
-
-  @Log.NT
-  public double getGoal() {
-    return goal.position;
-  }
-
-  @Log.NT
-  public double getSetpointPos() {
-    return setpoint.position;
-  }
-
-  @Log.NT
-  public double getSetpointVel() {
-    return setpoint.velocity;
   }
 
   @Log.NT

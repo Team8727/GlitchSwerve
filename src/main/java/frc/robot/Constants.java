@@ -208,6 +208,7 @@ public class Constants {
       public static double maxPIDOutput = 1.0;
       // PID
       public static double kP = 0; // TODO get Real
+      public static double kI = 0; // TODO get Real
       public static double kD = 0; // TODO get Real
       // FF
       public static double kS = 0.4273;
@@ -215,10 +216,9 @@ public class Constants {
       public static double kV = 1.9466;
       public static double kA = 0.24565;
 
-      public static class kProfile {
-        public static double maxVel = 2;
-        public static double maxAccel = 2;
-      }
+      // ProfiledPIDController
+      public static double maxVel = 2;
+      public static double maxAccel = 2;
 
       public static final double intakeRadiansDown = 0;
       public static final double intakeRadiansHome = 2.7;
@@ -242,6 +242,7 @@ public class Constants {
 
       // PD
       public static double kP = 0; // TODO get Real
+      public static double kI = 0; // TODO get Real
       public static double kD = 0; // TODO get Real
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
@@ -256,10 +257,8 @@ public class Constants {
       public static double kV = 0; // TODO get Real
       public static double kA = 0; // TODO get real
 
-      public static class kProfile {
-        public static double maxVel = 0;
-        public static double maxAccel = 0;
-      }
+      public static double maxVel = 0;
+      public static double maxAccel = 0;
 
       public static double homeRad = 0; // TODO get real radians
     }

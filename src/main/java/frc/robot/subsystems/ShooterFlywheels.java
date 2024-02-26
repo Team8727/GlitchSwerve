@@ -153,6 +153,10 @@ public class ShooterFlywheels extends SubsystemBase {
     hasPiece = piece;
   }
 
+  public boolean pieceState() {
+    return hasPiece;
+  }
+
   public Command intakeCommand() {
     return setRollerSpeed(kFlywheels.intakeVel)
         .until(() -> getPieceCheck())

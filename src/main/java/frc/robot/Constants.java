@@ -36,7 +36,7 @@ public class Constants {
     DESKTOP_VISION,
     DESKTOP
   }
-  
+
   // SysId
   public static enum sysIdType {
     LINEAR,
@@ -51,7 +51,7 @@ public class Constants {
     SHOOTERPIVOT,
     CLIMBER
   }
-  
+
   public static class kClimber {
     public static int climberID = 30;
 
@@ -63,7 +63,7 @@ public class Constants {
 
     public static final double kP = 0;
     public static final double kD = 0;
-    
+
     public static final double currentLimit = 0;
   }
   

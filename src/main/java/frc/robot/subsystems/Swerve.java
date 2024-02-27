@@ -86,7 +86,6 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // Controls objects
   private final SwerveDrivePoseEstimator poseEstimator;
   private final ChassisLimiter limiter;
-  @Log.File private Rotation2d gyroOffset = new Rotation2d();
   @Log.NT private ChassisSpeeds chassisVelocityTarget = new ChassisSpeeds();
 
   public class SwerveState {
@@ -210,7 +209,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
             new Constraints(kSwerve.maxAngSpeed, kSwerve.maxAngAccel));
     headingController.enableContinuousInput(0, 2 * Math.PI);
 
-    return this.runOnce(() -> headingController.reset(getGyro().getRadians(), getGyroYawRate()))
+    return this.runOnce(() -> headingController.reset(getHeading().getRadians(), getGyroYawRate()))
         .andThen(
             this.run(
                 () -> {
@@ -246,7 +245,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
             new Constraints(kSwerve.maxAngSpeed, kSwerve.maxAngAccel));
     headingController.enableContinuousInput(0, 2 * Math.PI);
 
-    return this.runOnce(() -> headingController.reset(getGyro().getRadians(), getGyroYawRate()))
+    return this.runOnce(() -> headingController.reset(getGyroRaw().getRadians(), getGyroYawRate()))
         .andThen(
             this.run(
                 () -> {
@@ -340,12 +339,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
   // Zero the gyro
   public Command zeroGyroCommand() {
-    return Commands.runOnce(this::zeroGyro).withName("zeroGyroCommand");
-  }
-
-  // Reset the gyro with pose estimation (don't use without vision)
-  public Command resetGyroCommand() {
-    return Commands.runOnce(this::matchGyroToPose).withName("resetGyroCommand");
+    return Commands.runOnce(() -> zeroGyro()).withName("zeroGyroCommand");
   }
 
   // ---------- SysId Commands ----------
@@ -363,7 +357,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
                 log.motor("Chassis")
                     .voltage(
                         appliedVoltage.mut_replace(frontLeftModule.getRawDriveNeoVoltage(), Volts))
-                    .angularPosition(angle.mut_replace(getGyro().getRadians(), Radians))
+                    .angularPosition(angle.mut_replace(getGyroRaw().getRadians(), Radians))
                     .angularVelocity(
                         angularVelocity.mut_replace(getGyroYawRate(), RadiansPerSecond));
               },
@@ -393,7 +387,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
     // Record targeted speed
     chassisVelocityTarget = speeds;
-    limiter.update(ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getGyro()));
+    limiter.update(ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getHeading()));
 
     // Discretize to reduce drift when rotating
     speeds = ChassisSpeeds.discretize(speeds, 0.02);
@@ -409,7 +403,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // Convert driver field relative speeds to chassis speeds
   public ChassisSpeeds driverToChassisSpeeds(ChassisSpeeds speeds) {
     speeds = limiter.calculate(speeds);
-    return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyro());
+    return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
   }
 
   // Set wheels to x configuration
@@ -476,12 +470,16 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
   // Zero out the gyro (current heading becomes 0)
   public void zeroGyro() {
-    gyroOffset = getGyroRaw();
+    poseEstimator.resetPosition(
+        getGyroRaw(),
+        getPositions(),
+        new Pose2d(getPose().getTranslation(), Rotation2d.fromRadians(0)));
   }
 
-  // Reset gyro using pose estimator
-  public void matchGyroToPose() {
-    gyroOffset = getGyroRaw().minus(getPose().getRotation());
+  // Return the heading of the robot as measured by the pose estimator
+  @Log.NT
+  public Rotation2d getHeading() {
+    return getPose().getRotation();
   }
 
   // Get gyro yaw rate (radians/s CCW +)
@@ -500,12 +498,6 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   @Log.NT
   private Rotation2d getGyroRaw() {
     return navX.getRotation2d();
-  }
-
-  // Get software offset gyro angle
-  @Log.NT
-  private Rotation2d getGyro() {
-    return getGyroRaw().minus(gyroOffset);
   }
 
   // Retrieve the positions (angle and distance traveled) for each swerve module

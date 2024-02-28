@@ -4,14 +4,12 @@
 
 package frc.robot;
 
-import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -48,9 +46,6 @@ public class Robot extends TimedRobot implements Logged {
   // SysId Objects
   private SysIdRoutines sysIdRoutines = new SysIdRoutines(swerve, intakePivot);
 
-  private ShuffleboardTab tab = Shuffleboard.getTab("IntakePivotVolts");
-  private GenericEntry voltageEnry = tab.add("Volts", 0).getEntry();
-
   // Bind commands to triggers
   private void configureBindings() {
     // Default telop drive command
@@ -73,7 +68,6 @@ public class Robot extends TimedRobot implements Logged {
         .a()
         .whileTrue(Commands.deferredProxy(() -> sysIdRoutines.getSelector().getSelected()));*/
 
-    driverController.a().whileTrue(intakePivot.setVoltageTest(() -> voltageEnry.getDouble(0)));
     driverController
         .b()
         .whileTrue(intakePivot.setIntakeDown(true).alongWith(intakeRollers.intakeCommand()));
@@ -82,7 +76,11 @@ public class Robot extends TimedRobot implements Logged {
   private void configureCommands() {
     new Trigger(intakeRollers::getPieceCheck)
         .and(() -> !shooterFlywheels.getPieceCheck())
-        .onTrue(intakeRollers.outtakeCommand().alongWith(shooterFlywheels.intakeCommand()));
+        .whileTrue(
+            intakeRollers
+                .outtakeCommand()
+                .alongWith(shooterFlywheels.intakeCommand())
+                .until(() -> shooterFlywheels.getPieceCheck()));
   }
 
   @Override

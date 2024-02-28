@@ -8,13 +8,13 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.*;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.SparkAbsoluteEncoder.Type;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
@@ -22,10 +22,13 @@ import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kIntake.kPivot;
+import frc.robot.utilities.ShuffleboardConfigs;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
@@ -33,29 +36,17 @@ import java.util.function.DoubleSupplier;
 import monologue.Annotations.Log;
 import monologue.Logged;
 
-public class IntakePivot extends SubsystemBase implements Logged {
-
+public class IntakePivot extends SubsystemBase implements Logged, ShuffleboardConfigs {
+  // Motor + Encoder
   private final CANSparkMax pivotMotor;
-  private final AbsoluteEncoder pivotEncoder;
+  private final Encoder pivotEncoder;
+  private Rotation2d encoderOffset;
 
+  // Controls
   private final ArmFeedforward pivotFF;
-
-  private final SysIdRoutine angularRoutine;
-
-  // Profile Stuff
   private final ProfiledPIDController profiledPIDController;
   private final TrapezoidProfile.Constraints constraints =
       new Constraints(kPivot.maxVel, kPivot.maxAccel);
-
-  // SysId Objects
-  // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
-  private final MutableMeasure<Voltage> m_appliedVoltage = mutable(Volts.of(0));
-  // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
-  private final MutableMeasure<Angle> m_angle = mutable(Radians.of(0));
-  // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
-  private final MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
-  private final MutableMeasure<Voltage> stepVoltage = mutable(Volts.of(4));
-  private final MutableMeasure<Time> timout = mutable(Seconds.of(5));
 
   public IntakePivot() {
     // Motor Configs
@@ -69,52 +60,45 @@ public class IntakePivot extends SubsystemBase implements Logged {
     pivotMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
 
     // Encoder Configs
-    pivotEncoder = pivotMotor.getAbsoluteEncoder(Type.kDutyCycle);
-    pivotEncoder.setPositionConversionFactor(kPivot.intakePivotEncoderPositionFactor);
-    pivotEncoder.setVelocityConversionFactor(kPivot.intakePivotEncoderVelocityFactor);
-    pivotEncoder.setInverted(false);
+    pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
+    pivotEncoder.setReverseDirection(true);
+    resetEncoder();
+    resetEncoderOffset(kPivot.intakeRadiansHome);
 
     // Feedforward Configs
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
 
+    pivotEncoder.setDistancePerPulse(2 * Math.PI / kPivot.pulsesPerRevolution);
+    pivotEncoder.reset();
+
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
-    profiledPIDController.reset(pivotEncoder.getPosition());
+    profiledPIDController.reset(getPhysAngle());
+    profiledPIDController.disableContinuousInput();
 
-    // Angular Routine Configs
-    angularRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(null, stepVoltage, timout),
-            new SysIdRoutine.Mechanism(
-                (volts) -> {
-                  pivotMotor.setVoltage(volts.magnitude());
-                },
-                (log) -> {
-                  log.motor("intakePivotMotor")
-                      .voltage(
-                          m_appliedVoltage.mut_replace(
-                              pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput(), Volts))
-                      .angularPosition(m_angle.mut_replace(pivotEncoder.getPosition(), Radians))
-                      .angularVelocity(
-                          m_velocity.mut_replace(
-                              (pivotEncoder.getVelocity() * Math.PI), RadiansPerSecond));
-                },
-                this));
+    // Button to Reset Encoder
+    SmartDashboard.putData("Reset IntakePivot Encoder", resetEncoder());
   }
 
-  // Set position input radians
-  public Command setIntakePivotPos(double posRad) {
-    return this.run(
-            () -> {
-              var setpoint = profiledPIDController.calculate(pivotEncoder.getPosition(), posRad);
-              pivotMotor.setVoltage(pivotFF.calculate(posRad, setpoint) + setpoint);
-            })
-        .until(() -> profiledPIDController.atGoal());
+  @Log.NT
+  public double getPhysAngle() {
+    return Math.PI - pivotEncoder.getDistance();
   }
 
+  // MAIN CONTROLS
   public Command setIntakeDown(boolean setDown) {
     return setDown
         ? setIntakePivotPos(kPivot.intakeRadiansDown)
         : setIntakePivotPos(kPivot.intakeRadiansHome);
+  }
+
+  public Command setIntakePivotPos(Rotation2d posRad) {
+    return this.runOnce(this::resetProfile)
+        .andThen(
+            this.run(
+                    () -> {
+                      pivotMotor.setVoltage(calculateVoltage(posRad));
+                    })
+                .finallyDo(() -> pivotMotor.setVoltage(0)));
   }
 
   public Command setVoltageTest(DoubleSupplier volts) {
@@ -122,23 +106,95 @@ public class IntakePivot extends SubsystemBase implements Logged {
         () -> pivotMotor.setVoltage(volts.getAsDouble()), () -> pivotMotor.setVoltage(0));
   }
 
+  // ---------- Public interface methods ----------
+
+  public void resetProfile() {
+    profiledPIDController.reset(getPivotAngle().getRadians(), getPivotVelocity());
+  }
+
+  @Log.NT
+  public Rotation2d getPivotAngle() {
+    return getRawEncoder().plus(encoderOffset);
+  }
+
+  @Log.NT
+  public double getPivotVelocity() {
+    return pivotEncoder.getRate();
+  }
+
+  @Log.NT
+  public double getAppliedVoltage() {
+    return pivotMotor.getAppliedOutput() * pivotMotor.getBusVoltage();
+  }
+
+  public void setBrakeMode(boolean on) {
+    if (on) {
+      pivotMotor.setIdleMode(IdleMode.kBrake);
+    } else {
+      pivotMotor.setIdleMode(IdleMode.kCoast);
+    }
+  }
+
+  public double calculateVoltage(Rotation2d angle) {
+    // Set appropriate goal
+    profiledPIDController.setGoal(angle.getRadians());
+
+    // Get setpoint from profile
+    var profileSetpoint = profiledPIDController.getSetpoint();
+
+    // Calculate voltages
+    double feedForwardVoltage =
+        pivotFF.calculate(
+            profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
+    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle().getRadians());
+
+    // Log Values
+    this.log("FeedbackVoltage", feedbackVoltage);
+    this.log("FeedForwardPosition", profileSetpoint.position);
+    this.log("FeedForwardVelocity", profileSetpoint.velocity);
+
+    return feedForwardVoltage + feedbackVoltage;
+  }
+
+  // Private hardware
+  private Rotation2d getRawEncoder() {
+    return Rotation2d.fromRadians(pivotEncoder.getDistance());
+  }
+
+  private void resetEncoderOffset(Rotation2d angle) {
+    encoderOffset = angle.minus(getRawEncoder());
+  }
+
+  // Reset Encoder
+  public Command resetEncoder() {
+    return this.runOnce(() -> pivotEncoder.reset());
+  }
+
   public SysIdRoutine getAngularRoutine() {
-    return angularRoutine;
-  }
-
-  // Logging
-  @Log.NT
-  public double getEncoderPos() {
-    return pivotEncoder.getPosition();
-  }
-
-  @Log.NT
-  public double getEncoderVel() {
-    return pivotEncoder.getVelocity();
-  }
-
-  @Log.NT
-  public double getAppliedVolts() {
-    return pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput();
+    // SysId Objects
+    // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
+    MutableMeasure<Voltage> m_appliedVoltage = mutable(Volts.of(0));
+    // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
+    MutableMeasure<Angle> m_angle = mutable(Radians.of(0));
+    // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
+    MutableMeasure<Velocity<Angle>> m_velocity = mutable(RadiansPerSecond.of(0));
+    MutableMeasure<Voltage> stepVoltage = mutable(Volts.of(4));
+    MutableMeasure<Time> timout = mutable(Seconds.of(5));
+    return new SysIdRoutine(
+        new SysIdRoutine.Config(null, stepVoltage, timout),
+        new SysIdRoutine.Mechanism(
+            (volts) -> {
+              pivotMotor.setVoltage(volts.magnitude());
+            },
+            (log) -> {
+              log.motor("intakePivotMotor")
+                  .voltage(
+                      m_appliedVoltage.mut_replace(
+                          pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput(), Volts))
+                  .angularPosition(m_angle.mut_replace(pivotEncoder.getDistance(), Radians))
+                  .angularVelocity(
+                      m_velocity.mut_replace((pivotEncoder.getRate()), RadiansPerSecond));
+            },
+            this));
   }
 }

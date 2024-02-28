@@ -8,6 +8,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkBase.IdleMode;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -202,43 +203,49 @@ public class Constants {
 
   public static class kIntake {
     public static class kPivot {
-      public static int pivotMotorID = 12;
+      public static int pivotMotorID = 10;
       public static double period = 0.02;
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
-      public static double kP = 0; // TODO get Real
-      public static double kI = 0; // TODO get Real
-      public static double kD = 0; // TODO get Real
+      public static double kP = 4;
+      public static double kI = 0;
+      public static double kD = 0.015;
       // FF
-      public static double kS = 0.4273;
-      public static double kG = 0.19892; // TO be tuned
-      public static double kV = 1.9466;
+      // public static double kS = 0.4273;
+      public static double kS = 0.15;
+      public static double kG = 0.23;
+      public static double kV = 1.1;
       public static double kA = 0.24565;
 
       // ProfiledPIDController
-      public static double maxVel = 2;
-      public static double maxAccel = 2;
+      public static double maxVel = 8;
+      public static double maxAccel = 40;
 
-      public static final double intakeRadiansDown = 0;
-      public static final double intakeRadiansHome = 2.7;
-      public static final double intakePivotEncoderPositionFactor = (2 * Math.PI); // radians
-      public static final double intakePivotEncoderVelocityFactor = (2 * Math.PI); // radians
+      // Encoder
+      public static int portA = 3;
+      public static int portB = 2;
+      public static double pulsesPerRevolution = 2048;
+      public static Rotation2d cogOffset = new Rotation2d(Math.PI);
+
+      public static final double resetProfiledPIDControllerPos = 0;
+      public static final Rotation2d intakeRadiansDown = new Rotation2d(0);
+      public static final Rotation2d intakeRadiansHome = new Rotation2d(Math.PI);
     }
 
     public static class kRollers {
-      public static int rollerMotorID = 11;
+      public static int rollerMotorID = 9;
       public static int sensorChannel = 0; // TODO get real channel
-      public static double intakeVoltage = 5; // TODO Tune
-      public static double outtakeVoltage = -5; // TODO tune
+      public static double intakeVoltage = 1; // TODO Tune
+      public static double outtakeVoltage = -1; // TODO tune
       public static double delayForOuttake = 1;
     }
   }
 
   public static class kShooter {
     public static class kPivot {
-      public static int pivot1MotorID = 9;
-      public static int pivot2MotorID = 10;
+      public static int pivot1MotorID = 11;
+      public static int pivot2MotorID = 12;
 
       // PD
       public static double kP = 0; // TODO get Real
@@ -246,8 +253,6 @@ public class Constants {
       public static double kD = 0; // TODO get Real
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
-      public static final double shooterPivotEncoderPositionFactor = (2 * Math.PI); // radians
-      public static final double shooterPivotEncoderVelocityFactor = (2 * Math.PI); // radians
 
       public static double period = 0.02;
 
@@ -257,6 +262,12 @@ public class Constants {
       public static double kV = 0; // TODO get Real
       public static double kA = 0; // TODO get real
 
+      // Encoder
+      public static int portA = 0;
+      public static int portB = 1;
+      public static double pulsesPerRevolution = 2048;
+      public static final double resetProfiledPIDControllerPos = 0;
+
       public static double maxVel = 0;
       public static double maxAccel = 0;
 
@@ -265,7 +276,7 @@ public class Constants {
 
     public static class kFlywheels {
       public static class kFlywheel1 {
-        public static int canID = 24;
+        public static int canID = 13;
         public static double ks = 0;
         public static double kv = 0;
         public static double ka = 0;
@@ -276,7 +287,7 @@ public class Constants {
       }
 
       public static class kFlywheel2 {
-        public static int canID = 25;
+        public static int canID = 14;
         public static double ks = 0;
         public static double kv = 0;
         public static double ka = 0;

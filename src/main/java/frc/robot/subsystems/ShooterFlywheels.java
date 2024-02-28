@@ -17,7 +17,6 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -46,7 +45,7 @@ public class ShooterFlywheels extends SubsystemBase {
   private final SparkPIDController fly2PID;
 
   // Sensor
-  private DigitalInput pieceCheck;
+  // private DigitalInput pieceCheck;
 
   private boolean hasPiece = false;
 
@@ -130,7 +129,7 @@ public class ShooterFlywheels extends SubsystemBase {
                               (fly2Encoder.getVelocity() * Math.PI), RadiansPerSecond));
                 },
                 this));
-    pieceCheck = new DigitalInput(kFlywheels.sensorChannel);
+    // pieceCheck = new DigitalInput(kFlywheels.sensorChannel);
   }
 
   public Command setRollerSpeed(double vel) { // TODO make sure inverted correctly
@@ -146,7 +145,8 @@ public class ShooterFlywheels extends SubsystemBase {
   }
 
   public boolean getPieceCheck() {
-    return !pieceCheck.get(); // Invert because of sensor
+    // return !pieceCheck.get(); // Invert because of sensor
+    return false;
   }
 
   public void setHasPiece(boolean piece) {

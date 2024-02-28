@@ -260,6 +260,27 @@ public class Constants {
 
       public static double period = 0.02;
 
+      // Encoder
+      public static final int encoderChannelA = 5;
+      public static final int encoderChannelB = 6;
+      public static final boolean invertEncoder = false;
+      public static final double gearRatio = 2;
+      public static final double distancePerPulse = (2 * Math.PI) * gearRatio / 2048; // radians
+      public static final Rotation2d cogOffset = Rotation2d.fromRadians(0); // TODO find this value
+
+      // Positions
+      public enum Position {
+        DOWN(Rotation2d.fromDegrees(0)),
+        CLIMB(Rotation2d.fromDegrees(0)),
+        AMP(Rotation2d.fromDegrees(0));
+
+        public final Rotation2d angle;
+
+        private Position(Rotation2d angle) {
+          this.angle = angle;
+        }
+      }
+
       // FF
       public static double kS = 0; // TODO GET REAL
       public static double kG = 0; // TODO get Real

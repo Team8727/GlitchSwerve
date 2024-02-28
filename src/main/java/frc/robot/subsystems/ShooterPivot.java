@@ -6,13 +6,13 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.*;
 
-import com.revrobotics.CANSparkBase;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
@@ -23,8 +23,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
 import frc.robot.utilities.SparkConfigurator.LogData;
-import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
+import java.util.function.Supplier;
 import monologue.Annotations.Log;
 import monologue.Logged;
 
@@ -33,16 +33,14 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   private final CANSparkMax pivotMotor1;
   private final CANSparkMax pivotMotor2;
 
-  // Feedforwards
+  // Controls objects
   private final ArmFeedforward pivotFF;
+  private final ProfiledPIDController pivotController;
+  private final TrapezoidProfile.State goal;
 
-  // Absolute Encoders
+  // Encoder objects
   private final Encoder pivotEncoder;
-
-  // Profile Stuff
-  private final TrapezoidProfile.Constraints constraints =
-      new Constraints(kPivot.maxVel, kPivot.maxAccel);
-  private final ProfiledPIDController profiledPIDController;
+  private Rotation2d encoderOffset;
 
   public ShooterPivot() {
     // Motor Initializations
@@ -51,41 +49,123 @@ public class ShooterPivot extends SubsystemBase implements Logged {
             kPivot.pivot1MotorID,
             CANSparkLowLevel.MotorType.kBrushless,
             true,
-            Set.of(Sensors.ABSOLUTE),
+            Set.of(),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     pivotMotor2 =
         getFollower(pivotMotor1, kPivot.pivot2MotorID, CANSparkLowLevel.MotorType.kBrushless);
-    pivotMotor1.setIdleMode(CANSparkBase.IdleMode.kBrake);
-    pivotMotor2.setIdleMode(CANSparkBase.IdleMode.kBrake);
+    setBrakeMode(true);
+
+    pivotMotor1.burnFlash();
+    pivotMotor2.burnFlash();
 
     // Feed Forwards
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
 
     // Encoder Configs
-    pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
-    pivotEncoder.setDistancePerPulse(2 * Math.PI / kPivot.pulsesPerRevolution);
+    pivotEncoder =
+        new Encoder(kPivot.encoderChannelA, kPivot.encoderChannelB, kPivot.invertEncoder);
+    pivotEncoder.setDistancePerPulse(kPivot.distancePerPulse);
+    resetEncoder(kPivot.Position.DOWN.angle);
 
-    // PID Configs
-    pivotPID = pivotMotor1.getPIDController();
-    pivotPID.setFeedbackDevice(pivotEncoder);
-    pivotPID.setOutputRange(kPivot.minPIDOutput, kPivot.maxPIDOutput);
-    pivotPID.setPositionPIDWrappingEnabled(false);
-    pivotPID.setP(kPivot.kP);
-    pivotPID.setD(kPivot.kD);
+    // Controller Configs
+    pivotController =
+        new ProfiledPIDController(
+            kPivot.kP,
+            0,
+            kPivot.kD,
+            new TrapezoidProfile.Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel));
+    goal = new TrapezoidProfile.State(getPivotAngle().getRadians(), getPivotVelocity());
+    pivotController.reset(goal);
+    pivotController.setGoal(goal);
   }
 
-  // Set position input radians
-  public Command setIntakePivotPos(double posRad) {
-    return this.run(
-            () -> {
-              var setpoint = profiledPIDController.calculate(pivotEncoder.getDistance(), posRad);
-              pivotMotor1.setVoltage(pivotFF.calculate(posRad, setpoint) + setpoint);
-            })
-        .until(() -> profiledPIDController.atGoal());
+  // ---------- Public interface methods ----------
+
+  public Command goToPositionCommand(kPivot.Position position) {
+    return goToAngleCommand(position.angle);
   }
 
-  public Command setShooterHome() {
-    return setIntakePivotPos(kPivot.homeRad);
+  public Command goToAngleCommand(Rotation2d angle) {
+    return this.runOnce(this::resetProfile)
+        .andThen(this.run(() -> pivotMotor1.setVoltage(calculateVoltage(angle))));
+  }
+
+  public Command trackAngleCommand(Supplier<Rotation2d> angleSupplier) {
+    return this.runOnce(this::resetProfile)
+        .andThen(this.run(() -> pivotMotor1.setVoltage(calculateVoltage(angleSupplier.get()))));
+  }
+
+  public Command setBrakeModeCommand(boolean on) {
+    return this.runOnce(() -> setBrakeMode(on));
+  }
+
+  // ---------- Public interface methods ----------
+
+  public void resetProfile() {
+    pivotController.reset(getPivotAngle().getRadians(), getPivotVelocity());
+  }
+
+  @Log.NT
+  public Rotation2d getPivotAngle() {
+    return getRawEncoder().plus(encoderOffset);
+  }
+
+  @Log.NT
+  public double getPivotVelocity() {
+    return pivotEncoder.getRate();
+  }
+
+  @Log.NT
+  public double getSetpointPosition() {
+    return goal.position;
+  }
+
+  @Log.NT
+  public double getSetpointVelocity() {
+    return goal.velocity;
+  }
+
+  @Log.NT
+  public double getAppliedVoltage() {
+    return pivotMotor1.getAppliedOutput() * pivotMotor1.getBusVoltage();
+  }
+
+  public void setBrakeMode(boolean on) {
+    if (on) {
+      pivotMotor1.setIdleMode(IdleMode.kBrake);
+      pivotMotor2.setIdleMode(IdleMode.kBrake);
+    } else {
+      pivotMotor1.setIdleMode(IdleMode.kCoast);
+      pivotMotor2.setIdleMode(IdleMode.kCoast);
+    }
+  }
+
+  public double calculateVoltage(Rotation2d angle) {
+    // Set appropriate goal
+    goal.position = angle.getRadians();
+    goal.velocity = 0;
+    pivotController.setGoal(goal);
+
+    // Get setpoint from profile
+    var profileSetpoint = pivotController.getSetpoint();
+
+    // Calculate voltages
+    double feedForwardVoltage =
+        pivotFF.calculate(
+            profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
+    double feedbackVoltage = pivotController.calculate(getPivotAngle().getRadians());
+
+    return feedForwardVoltage + feedbackVoltage;
+  }
+
+  // ---------- Private hardware interface methods ----------
+
+  private Rotation2d getRawEncoder() {
+    return Rotation2d.fromRadians(pivotEncoder.getDistance());
+  }
+
+  private void resetEncoder(Rotation2d angle) {
+    encoderOffset = angle.minus(getRawEncoder());
   }
 
   // Get SysID Routine
@@ -103,13 +183,10 @@ public class ShooterPivot extends SubsystemBase implements Logged {
               pivotMotor1.setVoltage(volts.magnitude());
             },
             (log) -> {
-              pivotEncoder.setVelocityConversionFactor(Math.PI);
               log.motor("shooterPivotMotor")
-                  .voltage(appliedVoltage.mut_replace(pivotMotor1.getBusVoltage(), Volts))
-                  .angularPosition(angle.mut_replace(pivotEncoder.getPosition() * Math.PI, Radians))
-                  .angularVelocity(
-                      velocity.mut_replace(
-                          (pivotEncoder.getVelocity() * Math.PI), RadiansPerSecond));
+                  .voltage(appliedVoltage.mut_replace(getAppliedVoltage(), Volts))
+                  .angularPosition(angle.mut_replace(getPivotAngle().getRadians(), Radians))
+                  .angularVelocity(velocity.mut_replace(getPivotVelocity(), RadiansPerSecond));
             },
             this));
   }

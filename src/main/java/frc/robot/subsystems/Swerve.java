@@ -277,6 +277,11 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
     return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
         .andThen(
+            () ->
+                setPose(
+                    path.getPreviewStartingHolonomicPose())) // TODO remove this when we get vision
+        // working
+        .andThen(
             new FollowPathHolonomic(
                 path,
                 this::getPose,
@@ -383,8 +388,6 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
   // Drive chassis-oriented (optional flag for closed loop velocity control)
   public void drive(ChassisSpeeds speeds, boolean closedLoopDrive) {
-    this.log("commandedSpeeds", speeds);
-
     // Record targeted speed
     chassisVelocityTarget = speeds;
     limiter.update(ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getHeading()));
@@ -423,6 +426,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   }
 
   // Retrieve the pose estimation pose
+  @Log.NT
   public Pose2d getPose() {
     return poseEstimator.getEstimatedPosition();
   }

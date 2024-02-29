@@ -19,7 +19,7 @@ import edu.wpi.first.wpilibj.SPI.Port;
 
 public class Constants {
   public static SimMode simMode = SimMode.DESKTOP;
-  public static TestMode testMode = TestMode.SYSID;
+  public static TestMode testMode = TestMode.NONE;
   public static boolean logFileOnly = false;
   public static boolean logLazy = true;
   public static int configurationSetRetries = 5;
@@ -40,7 +40,7 @@ public class Constants {
   public enum TestMode {
     NONE,
     SYSID,
-    NO_BREAK_MODE
+    NO_BRAKE_MODE
   }
 
   public static enum subsystems {
@@ -96,7 +96,7 @@ public class Constants {
 
     // Controller PID values for x/y translation, and z rotation
     public static class Auton {
-      public static final double angP = 5;
+      public static final double angP = 4;
       public static final double angD = 0;
 
       public static final double maxAccel = 1.5;
@@ -106,10 +106,13 @@ public class Constants {
 
       public static final HolonomicPathFollowerConfig pathFollowConfig =
           new HolonomicPathFollowerConfig(
-              new PIDConstants(0.1, 0.0, 0), // Translation PID constants
+              new PIDConstants(12, 0.0, 0), // Translation PID constants
               new PIDConstants(angP, 0.0, angD), // Rotation PID constants
-              4.5, // Max module speed, in m/s
-              0.4, // Drive base radius in meters. Distance from robot center to furthest module.
+              kModule.maxWheelSpeed, // Max module speed, in m/s
+              Math.pow(
+                  Math.pow(kSwerve.width / 2, 2) + Math.pow(kSwerve.length / 2, 2),
+                  1 / 2), // Drive base radius in meters. Distance from robot center to furthest
+              // module.
               new ReplanningConfig(false, false));
     }
 

@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -9,10 +10,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class AutoRoutines {
-  @SuppressWarnings("unused")
   private final Swerve swerve;
 
-  @SuppressWarnings("unused")
   private final LinkedHashMap<String, PathPlannerPath> paths =
       new LinkedHashMap<String, PathPlannerPath>();
 
@@ -22,8 +21,8 @@ public class AutoRoutines {
   public AutoRoutines(Swerve swerve) {
     this.swerve = swerve;
 
-    loadPaths();
     loadCommands();
+    loadPaths();
     loadRoutines();
     populateSendable();
   }
@@ -33,12 +32,18 @@ public class AutoRoutines {
      ex:
      paths.put("Crazy auto", swerve.followPathWithEventsCommand(paths.get("crazy_auto")));
   */
-  private void loadPaths() {}
+  private void loadPaths() {
+    paths.put("fourNote1", PathPlannerPath.fromChoreoTrajectory("four note.1"));
+    paths.put("fourNote2", PathPlannerPath.fromChoreoTrajectory("four note.2"));
+    paths.put("fourNote3", PathPlannerPath.fromChoreoTrajectory("four note.3"));
+  }
 
   // Add commands to PathPlanner in this form:
   // NamedCommands.registerCommand("<Name>", <command>);
   // Must match the naming in the PathPlanner app
-  private void loadCommands() {}
+  private void loadCommands() {
+    NamedCommands.registerCommand("intake", Commands.none());
+  }
 
   /* Add routines to the hashmap using this format:
      routines.put("<Name>", <Command to run>);
@@ -47,6 +52,15 @@ public class AutoRoutines {
   */
   private void loadRoutines() {
     routines.put("No Auto", Commands.waitSeconds(0));
+    routines.put(
+        "fourNote",
+        Commands.waitSeconds(0.5)
+            .andThen(swerve.followPathCommand(paths.get("fourNote1"), true))
+            .andThen(Commands.waitSeconds(0.5))
+            .andThen(swerve.followPathCommand(paths.get("fourNote2"), true))
+            .andThen(Commands.waitSeconds(0.5))
+            .andThen(swerve.followPathCommand(paths.get("fourNote3"), true))
+            .andThen(Commands.waitSeconds(0.5)));
   }
 
   // Adds all the Commands to the sendable chooser

@@ -53,18 +53,26 @@ public class Constants {
   }
 
   public static class kClimber {
-    public static int climberID = 30;
+    public static int climberID = 15;
 
-    // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
-    // = SimpleMotorFeedforward(kS, kV, kA);
+    // feedForward constants below. This is used in initializing feedForward objects: [Object Name] = SimpleMotorFeedforward(kS, kV, kA);
     public static final double kS = 0;
     public static final double kV = 0;
     public static final double kA = 0;
 
+    // PID values of P and D
     public static final double kP = 0;
     public static final double kD = 0;
 
+    // Current limit of the Climber SparkMax (climbMotor)
     public static final double currentLimit = 0;
+
+    // Parameters for the filter used in getting the current output of climbMotor
+    public static final double timeConstant = 0;
+    public static final double period = 0.02;
+
+    public static final double rotationsToClimb = 0;
+
   }
   
   public enum TestMode {

@@ -1,25 +1,33 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kClimber;
-import java.util.function.DoubleSupplier;
+import frc.robot.utilities.SparkConfigurator.LogData;
+
+import java.util.Set;
+import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 public class Climber extends SubsystemBase {
 
-  CANSparkMax climbMotor;
-  SimpleMotorFeedforward feedforward;
-  SparkPIDController climbPID;
-  LinearFilter currentFilter;
+  private final CANSparkMax climbMotor;
+  private final RelativeEncoder climbEncoder;
+  private final SimpleMotorFeedforward feedforward;
+  private final SparkPIDController climbPID;
+  private LinearFilter currentFilter;
 
   public Climber() {
-    climbMotor = new CANSparkMax(kClimber.climberID, MotorType.kBrushless);
-    // climbMotor.getOutputCurrent();
+    climbMotor = getSparkMax(kClimber.climberID, MotorType.kBrushless, false, Set.of(),Set.of(LogData.VOLTAGE));
+    climbMotor.setIdleMode(IdleMode.kBrake);
+    climbEncoder = climbMotor.getEncoder();
     feedforward = new SimpleMotorFeedforward(kClimber.kS, kClimber.kV, kClimber.kA);
     climbPID = climbMotor.getPIDController();
     climbPID.setP(kClimber.kP);
@@ -27,20 +35,37 @@ public class Climber extends SubsystemBase {
 
     // -=-=-=- Change timeConstant and period to Fit Robot Parameters and Desired Function: -=-=-=-
 
-    currentFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
+    currentFilter = LinearFilter.singlePoleIIR(kClimber.timeConstant, kClimber.period);
   }
 
   //
 
-  public boolean getCurrentLimitBoolean() {
-    if (currentFilter.calculate(climbMotor.getOutputCurrent()) > kClimber.currentLimit) {
-      return true;
-    } else {
-      return false;
-    }
+  public boolean getIfCurrentLimit() {
+    return (currentFilter.calculate(climbMotor.getOutputCurrent()) > kClimber.currentLimit);
   }
 
-  public Command driveClimbMotor(DoubleSupplier velocity) {
-    return this.runOnce(() -> climbMotor.setVoltage(feedforward.calculate(velocity.getAsDouble())));
+  public Command climbUp(double velocity) {
+    return run(
+      () -> 
+        climbMotor.setVoltage(velocity))
+    .until(
+      () -> 
+        climbEncoder.getPosition() >= kClimber.rotationsToClimb)
+    .andThen(
+      () -> 
+        climbMotor.setVoltage(0));
+  }
+
+  public Command climbDown(double velocity) {
+    return run(
+      () -> 
+        climbMotor.setVoltage(-velocity))
+    .until(
+      () -> 
+        climbEncoder.getPosition() <= 0)
+    .andThen(
+      () -> 
+        climbMotor.setVoltage(0));
   }
 }
+

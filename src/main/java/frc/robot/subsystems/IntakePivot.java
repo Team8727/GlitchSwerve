@@ -23,7 +23,8 @@ import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -48,6 +49,9 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   private final TrapezoidProfile.Constraints constraints =
       new Constraints(kPivot.maxVel, kPivot.maxAccel);
 
+  // Shuffleboard
+  private ShuffleboardTab tab = Shuffleboard.getTab("Active Configs");
+
   public IntakePivot() {
     // Motor Configs
     pivotMotor =
@@ -61,7 +65,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     // Encoder Configs
     pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
-    pivotEncoder.setReverseDirection(true);
+    pivotEncoder.setReverseDirection(kPivot.invertedEncoder);
     resetEncoder();
     resetEncoderOffset(kPivot.intakeRadiansHome);
 
@@ -76,7 +80,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     profiledPIDController.disableContinuousInput();
 
     // Button to Reset Encoder
-    SmartDashboard.putData("Reset IntakePivot Encoder", resetEncoder());
+    tab.add("Reset Intake Pivot Encoder", resetEncoder());
   }
 
   @Log.NT

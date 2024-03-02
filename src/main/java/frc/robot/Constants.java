@@ -231,6 +231,7 @@ public class Constants {
       public static int portB = 2;
       public static double pulsesPerRevolution = 2048;
       public static Rotation2d cogOffset = new Rotation2d(Math.PI);
+      public static boolean invertedEncoder = false;
 
       public static final double resetProfiledPIDControllerPos = 0;
       public static final Rotation2d intakeRadiansDown = new Rotation2d(0);

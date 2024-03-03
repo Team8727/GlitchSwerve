@@ -328,7 +328,6 @@ public class Constants {
       }
     }
 
-
     public static class kHandoffRollers {
       public static int canID = 15;
       public static double shooterFeedVoltage = 7;

@@ -18,11 +18,11 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.SysIdRoutines;
+import frc.robot.subsystems.HandoffRollers;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
-import frc.robot.subsystems.HandoffRollers;
 import frc.robot.subsystems.Swerve;
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,13 +41,12 @@ public class Robot extends TimedRobot implements Logged {
   private IntakePivot intakePivot = new IntakePivot();
   private ShooterFlywheels shooterFlywheels = new ShooterFlywheels();
   private ShooterPivot shooterPivot = new ShooterPivot();
+  private HandoffRollers handoffRollers = new HandoffRollers();
 
   // Auto Objects
   private AutoRoutines autos = new AutoRoutines(swerve);
   private Command autoCommand;
-  private ShooterFlywheels flywheels = new ShooterFlywheels();
   private SysIdRoutines sysIdRoutines;
-  private HandoffRollers handoffRollers = new HandoffRollers();
 
   // Bind commands to triggers
   private void configureTeleopBindings() {
@@ -70,17 +69,13 @@ public class Robot extends TimedRobot implements Logged {
   private void configureCommands() {
     new Trigger(intakeRollers::getPieceCheck)
         .and(() -> !shooterFlywheels.getPieceCheck())
-        .whileTrue(
-            intakeRollers
-                .outtakeCommand()
-                .alongWith(shooterFlywheels.intakeCommand())
-                .until(() -> shooterFlywheels.getPieceCheck()));
+        .whileTrue(intakeRollers.outtakeCommand().until(() -> shooterFlywheels.getPieceCheck()));
     driverController
         .a()
         .onTrue(
             Commands.print("What the fuck")
                 .andThen(
-                    flywheels
+                    shooterFlywheels
                         .shootTest(10)
                         .raceWith(
                             Commands.waitSeconds(1).andThen(handoffRollers.feedShooterCommand()))));
@@ -147,9 +142,6 @@ public class Robot extends TimedRobot implements Logged {
     autoCommand = autos.getSelector().getSelected();
     autos.getSelector().onChange((command) -> autoCommand = command);
     Shuffleboard.getTab("Auto").add("Auto selector", autos.getSelector());
-
-    // Start sysId selector
-    Shuffleboard.getTab("SysId").add("SysID selector", sysIdRoutines.getSelector());
   }
 
   @Override

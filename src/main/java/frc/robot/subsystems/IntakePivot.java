@@ -178,20 +178,21 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     MutableMeasure<Angle> angle = mutable(Radians.of(0));
     // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
     MutableMeasure<Velocity<Angle>> velocity = mutable(RadiansPerSecond.of(0));
+    MutableMeasure<Voltage> stepVoltage = mutable(Volts.of(4));
+    MutableMeasure<Time> timeout = mutable(Seconds.of(5));
     return new SysIdRoutine(
-        new SysIdRoutine.Config(),
+        new SysIdRoutine.Config(null, stepVoltage, timeout),
         new SysIdRoutine.Mechanism(
             (volts) -> {
               pivotMotor.setVoltage(volts.magnitude());
             },
             (log) -> {
-              pivotEncoder.setVelocityConversionFactor(Math.PI);
               log.motor("intakePivotMotor")
-                  .voltage(appliedVoltage.mut_replace(pivotMotor.getBusVoltage(), Volts))
-                  .angularPosition(angle.mut_replace(pivotEncoder.getPosition() * Math.PI, Radians))
-                  .angularVelocity(
-                      velocity.mut_replace(
-                          (pivotEncoder.getVelocity() * Math.PI), RadiansPerSecond));
+                  .voltage(
+                      appliedVoltage.mut_replace(
+                          pivotMotor.getBusVoltage() * pivotMotor.getAppliedOutput(), Volts))
+                  .angularPosition(angle.mut_replace(pivotEncoder.getDistance() * Math.PI, Radians))
+                  .angularVelocity(velocity.mut_replace(pivotEncoder.getRate(), RadiansPerSecond));
             },
             this));
   }

@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.*;
 
@@ -15,6 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Encoder;
@@ -73,7 +75,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
             kPivot.kP,
             0,
             kPivot.kD,
-            new TrapezoidProfile.Constraints(kPivot.kProfile.maxVel, kPivot.kProfile.maxAccel));
+            new TrapezoidProfile.Constraints(kPivot.maxVel, kPivot.maxAccel));
     goal = new TrapezoidProfile.State(getPivotAngle().getRadians(), getPivotVelocity());
     pivotController.reset(goal);
     pivotController.setGoal(goal);
@@ -97,6 +99,10 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   public Command setBrakeModeCommand(boolean on) {
     return this.runOnce(() -> setBrakeMode(on));
+  }
+
+  public Command setShooterHome() {
+    return this.runOnce(() -> resetEncoder(kPivot.Position.DOWN.angle));
   }
 
   // ---------- Public interface methods ----------
@@ -176,8 +182,10 @@ public class ShooterPivot extends SubsystemBase implements Logged {
     MutableMeasure<Angle> angle = mutable(Radians.of(0));
     // Mutable holder for unit-safe angular velocity values, persisted to avoid reallocation.
     MutableMeasure<Velocity<Angle>> velocity = mutable(RadiansPerSecond.of(0));
+    MutableMeasure<Voltage> stepVoltage = mutable(Volts.of(4));
+    MutableMeasure<Time> timeout = mutable(Seconds.of(5));
     return new SysIdRoutine(
-        new SysIdRoutine.Config(),
+        new SysIdRoutine.Config(null, stepVoltage, timeout),
         new SysIdRoutine.Mechanism(
             (volts) -> {
               pivotMotor1.setVoltage(volts.magnitude());

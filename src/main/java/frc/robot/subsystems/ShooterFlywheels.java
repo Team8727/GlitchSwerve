@@ -40,6 +40,7 @@ public class ShooterFlywheels extends SubsystemBase {
   private final RelativeEncoder fly1Encoder;
   private final RelativeEncoder fly2Encoder;
   private double setpoint;
+  private boolean hasPiece;
 
   public ShooterFlywheels() {
     flywheel1 =
@@ -170,11 +171,5 @@ public class ShooterFlywheels extends SubsystemBase {
 
   public boolean pieceState() {
     return hasPiece;
-  }
-
-  public Command intakeCommand() {
-    return setRollerSpeed(kFlywheels.intakeVel)
-        .until(() -> getPieceCheck())
-        .finallyDo(() -> setHasPiece(true));
   }
 }

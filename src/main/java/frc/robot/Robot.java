@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.SysIdRoutines;
@@ -64,12 +63,13 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
+
+    driverController
+        .b()
+        .whileTrue(intakeRollers.intakeCommand().raceWith(intakePivot.setIntakeDown(true)));
   }
 
   private void configureCommands() {
-    new Trigger(intakeRollers::getPieceCheck)
-        .and(() -> !shooterFlywheels.getPieceCheck())
-        .whileTrue(intakeRollers.outtakeCommand().until(() -> shooterFlywheels.getPieceCheck()));
     driverController
         .a()
         .onTrue(

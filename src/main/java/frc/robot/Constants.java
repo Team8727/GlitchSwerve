@@ -252,8 +252,8 @@ public class Constants {
       public static double kA = 0.24565;
 
       // ProfiledPIDController
-      public static double maxVel = 8;
-      public static double maxAccel = 40;
+      public static double maxVel = 2;
+      public static double maxAccel = 1;
 
       // Encoder
       public static int portA = 3;
@@ -261,17 +261,18 @@ public class Constants {
       public static double pulsesPerRevolution = 2048;
       public static Rotation2d cogOffset = new Rotation2d(Math.PI);
       public static boolean invertedEncoder = false;
+      public static int gearRatio = 2;
 
       public static final double resetProfiledPIDControllerPos = 0;
-      public static final Rotation2d intakeRadiansDown = new Rotation2d(0);
-      public static final Rotation2d intakeRadiansHome = new Rotation2d(Math.PI);
+      public static final double intakeRadiansDown = 0.15;
+      public static final double intakeRadiansHome = Math.PI;
     }
 
     public static class kRollers {
       public static int rollerMotorID = 9;
-      public static int sensorChannel = 0; // TODO get real channel
-      public static double intakeVoltage = 1; // TODO Tune
-      public static double outtakeVoltage = -1; // TODO tune
+      public static int sensorChannel = 6;
+      public static double intakeVoltage = -6;
+      public static double intakeDelay = 0.15;
       public static double delayForOuttake = 1;
     }
   }
@@ -291,8 +292,8 @@ public class Constants {
       public static double period = 0.02;
 
       // Encoder
-      public static final int encoderChannelA = 5;
-      public static final int encoderChannelB = 6;
+      public static final int encoderChannelA = 0;
+      public static final int encoderChannelB = 1;
       public static final boolean invertEncoder = false;
       public static final double gearRatio = 2;
       public static final double distancePerPulse = (2 * Math.PI) * gearRatio / 2048; // radians

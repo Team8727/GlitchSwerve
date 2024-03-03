@@ -14,7 +14,6 @@ import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
@@ -41,7 +40,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
   private final CANSparkMax pivotMotor;
   private final Encoder pivotEncoder;
-  private Rotation2d encoderOffset;
+  private double encoderOffset;
 
   // Controls
   private final ArmFeedforward pivotFF;
@@ -72,7 +71,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     // Feedforward Configs
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
 
-    pivotEncoder.setDistancePerPulse(2 * Math.PI / kPivot.pulsesPerRevolution);
+    pivotEncoder.setDistancePerPulse(2 * Math.PI / (kPivot.pulsesPerRevolution * kPivot.gearRatio));
     pivotEncoder.reset();
 
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
@@ -81,6 +80,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     // Button to Reset Encoder
     tab.add("Reset Intake Pivot Encoder", resetEncoder());
+    tab.add("PID", profiledPIDController);
   }
 
   @Log.NT
@@ -88,14 +88,14 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return Math.PI - pivotEncoder.getDistance();
   }
 
-  // MAIN CONTROLS
+  // MAIN CONTROLS -------------------------------
   public Command setIntakeDown(boolean setDown) {
     return setDown
         ? setIntakePivotPos(kPivot.intakeRadiansDown)
         : setIntakePivotPos(kPivot.intakeRadiansHome);
   }
 
-  public Command setIntakePivotPos(Rotation2d posRad) {
+  public Command setIntakePivotPos(double posRad) {
     return this.runOnce(this::resetProfile)
         .andThen(
             this.run(
@@ -113,12 +113,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   // ---------- Public interface methods ----------
 
   public void resetProfile() {
-    profiledPIDController.reset(getPivotAngle().getRadians(), getPivotVelocity());
-  }
-
-  @Log.NT
-  public Rotation2d getPivotAngle() {
-    return getRawEncoder().plus(encoderOffset);
+    profiledPIDController.reset(getPhysAngle(), getPivotVelocity());
   }
 
   @Log.NT
@@ -139,9 +134,9 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     }
   }
 
-  public double calculateVoltage(Rotation2d angle) {
+  public double calculateVoltage(double angle) {
     // Set appropriate goal
-    profiledPIDController.setGoal(angle.getRadians());
+    profiledPIDController.setGoal(angle);
 
     // Get setpoint from profile
     var profileSetpoint = profiledPIDController.getSetpoint();
@@ -150,7 +145,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     double feedForwardVoltage =
         pivotFF.calculate(
             profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
-    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle().getRadians());
+    double feedbackVoltage = profiledPIDController.calculate(getPhysAngle());
 
     // Log Values
     this.log("FeedbackVoltage", feedbackVoltage);
@@ -160,18 +155,23 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return feedForwardVoltage + feedbackVoltage;
   }
 
-  // Private hardware
-  private Rotation2d getRawEncoder() {
-    return Rotation2d.fromRadians(pivotEncoder.getDistance());
+  public boolean getHome() {
+    return ((profiledPIDController.getGoal().position - getPhysAngle()) < 0.01)
+        && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }
 
-  private void resetEncoderOffset(Rotation2d angle) {
-    encoderOffset = angle.minus(getRawEncoder());
+  // Private hardware
+  private double getRawEncoder() {
+    return pivotEncoder.getDistance();
+  }
+
+  private void resetEncoderOffset(double angle) {
+    encoderOffset = angle - getRawEncoder();
   }
 
   // Reset Encoder
   public Command resetEncoder() {
-    return this.runOnce(() -> pivotEncoder.reset());
+    return this.runOnce(() -> pivotEncoder.reset()).ignoringDisable(true);
   }
 
   // Return SysId Routine

@@ -5,16 +5,20 @@ import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kIntake.kRollers;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import java.util.Set;
+import monologue.Annotations.Log;
+import monologue.Logged;
 
-public class IntakeRollers extends SubsystemBase {
+public class IntakeRollers extends SubsystemBase implements Logged {
 
   private CANSparkMax intakeMotor;
-  // private DigitalInput pieceCheck;
+  private DigitalInput pieceCheck;
 
   private boolean hasPiece;
 
@@ -27,17 +31,17 @@ public class IntakeRollers extends SubsystemBase {
             Set.of(),
             Set.of(LogData.CURRENT, LogData.VOLTAGE));
     intakeMotor.setIdleMode(IdleMode.kBrake);
-    // pieceCheck = new DigitalInput(kRollers.sensorChannel);
+    pieceCheck = new DigitalInput(kRollers.sensorChannel);
     hasPiece = false;
   }
 
-  public Command runRollers(double volts) {
-    return this.run(() -> intakeMotor.setVoltage(volts));
+  public void runRollers(double volts) {
+    intakeMotor.setVoltage(volts);
   }
 
+  @Log.NT
   public boolean getPieceCheck() {
-    // return !pieceCheck.get(); // Invert because of sensor
-    return false;
+    return !pieceCheck.get();
   }
 
   private void setHasPiece(boolean piece) {
@@ -49,14 +53,9 @@ public class IntakeRollers extends SubsystemBase {
   }
 
   public Command intakeCommand() {
-    return runRollers(kRollers.intakeVoltage)
-        .until(() -> getPieceCheck())
-        .finallyDo(() -> setHasPiece(true));
-  }
-
-  public Command outtakeCommand() {
-    return runRollers(kRollers.outtakeVoltage)
-        .until(() -> getPieceCheck())
-        .andThen(runRollers(kRollers.outtakeVoltage).withTimeout(kRollers.delayForOuttake));
+    return this.run(() -> runRollers(kRollers.intakeVoltage))
+        .until(this::getPieceCheck)
+        .andThen(Commands.waitSeconds(kRollers.intakeDelay))
+        .finallyDo(() -> runRollers(0));
   }
 }

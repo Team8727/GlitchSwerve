@@ -6,11 +6,10 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.SparkAbsoluteEncoder.Type;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.Angle;
@@ -25,25 +24,22 @@ import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
 import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.SparkConfigurator.LogData;
-import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
+import monologue.Annotations.Log;
 
 public class ShooterFlywheels extends SubsystemBase {
   // Motor Controllers
   private final CANSparkMax flywheel1;
   private final CANSparkMax flywheel2;
 
-  // Encoders
-  private final AbsoluteEncoder fly1Encoder;
-  private final AbsoluteEncoder fly2Encoder;
-
-  // Feedforwards
+  // Controls Objects
   private final SimpleMotorFeedforward fly1FF;
   private final SimpleMotorFeedforward fly2FF;
-
-  // PID Controllers
   private final SparkPIDController fly1PID;
   private final SparkPIDController fly2PID;
+  private final RelativeEncoder fly1Encoder;
+  private final RelativeEncoder fly2Encoder;
+  private double setpoint;
 
   public ShooterFlywheels() {
     flywheel1 =
@@ -51,28 +47,31 @@ public class ShooterFlywheels extends SubsystemBase {
             kFlywheel1.canID,
             CANSparkLowLevel.MotorType.kBrushless,
             false,
-            Set.of(Sensors.ABSOLUTE),
+            Set.of(),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     flywheel2 =
         getSparkMax(
             kFlywheel2.canID,
             CANSparkLowLevel.MotorType.kBrushless,
             false,
-            Set.of(Sensors.ABSOLUTE),
+            Set.of(),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
+
+    flywheel1.setInverted(kFlywheels.invert);
+    flywheel2.setInverted(!kFlywheels.invert);
 
     // FeedForwards
     fly1FF = new SimpleMotorFeedforward(kFlywheel1.ks, kFlywheel1.kv, kFlywheel1.ka);
     fly2FF = new SimpleMotorFeedforward(kFlywheel2.ks, kFlywheel2.kv, kFlywheel2.ka);
 
     // Encoders
-    fly1Encoder = flywheel1.getAbsoluteEncoder(Type.kDutyCycle);
-    fly1Encoder.setPositionConversionFactor(kFlywheels.encoderPositionFactor);
-    fly1Encoder.setInverted(false);
+    fly1Encoder = flywheel1.getEncoder();
+    fly1Encoder.setPositionConversionFactor(kFlywheels.positionConversionFactor);
+    fly1Encoder.setVelocityConversionFactor(kFlywheels.velocityConversionFactor);
 
-    fly2Encoder = flywheel2.getAbsoluteEncoder(Type.kDutyCycle);
-    fly2Encoder.setPositionConversionFactor(kFlywheels.encoderPositionFactor);
-    fly2Encoder.setInverted(false);
+    fly2Encoder = flywheel2.getEncoder();
+    fly2Encoder.setPositionConversionFactor(kFlywheels.positionConversionFactor);
+    fly2Encoder.setVelocityConversionFactor(kFlywheels.velocityConversionFactor);
 
     // PIDS
     fly1PID = flywheel1.getPIDController();
@@ -89,11 +88,41 @@ public class ShooterFlywheels extends SubsystemBase {
   }
 
   public Command setRollerSpeed(double vel) { // TODO make sure inverted correctly
-    return this.run(
-        () -> {
-          fly1PID.setReference(vel, ControlType.kVelocity, 0, fly1FF.calculate(vel));
-          fly2PID.setReference(-vel, ControlType.kVelocity, 0, fly2FF.calculate(-vel));
-        });
+    return this.run(() -> setVelocity(vel));
+  }
+
+  public Command shootTest(double voltage) {
+    return this.startEnd(() -> setVoltage(voltage), () -> setVoltage(0));
+  }
+
+  // ---------- Public interface methods ----------
+
+  @Log.NT
+  public double[] getVelocities() {
+    return new double[] {fly1Encoder.getVelocity(), fly2Encoder.getVelocity()};
+  }
+
+  @Log.NT
+  public double getSetpointVelocity() {
+    return setpoint;
+  }
+
+  @Log.NT
+  public double[] getAppliedVoltages() {
+    return new double[] {
+      flywheel1.getAppliedOutput() * flywheel1.getBusVoltage(),
+      flywheel2.getAppliedOutput() * flywheel2.getBusVoltage()
+    };
+  }
+
+  public void setVoltage(double voltage) {
+    flywheel1.setVoltage(voltage);
+    flywheel2.setVoltage(voltage);
+  }
+
+  public void setVelocity(double velocity) {
+    fly1PID.setReference(velocity, ControlType.kVelocity, 0, fly1FF.calculate(velocity));
+    fly2PID.setReference(velocity, ControlType.kVelocity, 0, fly2FF.calculate(velocity));
   }
 
   public SysIdRoutine getRoutine(SysIdType type) {

@@ -22,6 +22,7 @@ import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
+import frc.robot.subsystems.HandoffRollers;
 import frc.robot.subsystems.Swerve;
 import java.io.BufferedReader;
 import java.io.File;
@@ -44,7 +45,9 @@ public class Robot extends TimedRobot implements Logged {
   // Auto Objects
   private AutoRoutines autos = new AutoRoutines(swerve);
   private Command autoCommand;
+  private ShooterFlywheels flywheels = new ShooterFlywheels();
   private SysIdRoutines sysIdRoutines;
+  private HandoffRollers handoffRollers = new HandoffRollers();
 
   // Bind commands to triggers
   private void configureTeleopBindings() {
@@ -62,15 +65,6 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
-
-    /*
-    driverController
-        .a()
-        .whileTrue(Commands.deferredProxy(() -> sysIdRoutines.getSelector().getSelected()));*/
-
-    driverController
-        .b()
-        .whileTrue(intakePivot.setIntakeDown(true).alongWith(intakeRollers.intakeCommand()));
   }
 
   private void configureCommands() {
@@ -81,6 +75,15 @@ public class Robot extends TimedRobot implements Logged {
                 .outtakeCommand()
                 .alongWith(shooterFlywheels.intakeCommand())
                 .until(() -> shooterFlywheels.getPieceCheck()));
+    driverController
+        .a()
+        .onTrue(
+            Commands.print("What the fuck")
+                .andThen(
+                    flywheels
+                        .shootTest(10)
+                        .raceWith(
+                            Commands.waitSeconds(1).andThen(handoffRollers.feedShooterCommand()))));
   }
 
   // Bind commands to triggers

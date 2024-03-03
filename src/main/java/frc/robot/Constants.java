@@ -55,8 +55,8 @@ public class Constants {
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {
     // Chassis dimensions from wheel center to center (meters)
-    public static double width = 0.525;
-    public static double length = 0.525;
+    public static double width = Units.inchesToMeters(23);
+    public static double length = width;
 
     // Speed & accel limits (m/s, rad/s, m/s^2 & rad/s^2)
     public static double maxTransSpeed = 5;
@@ -186,12 +186,12 @@ public class Constants {
     public static class CANID {
       public static int frontLeftDrive = 1;
       public static int frontLeftSteer = 2;
-      public static int backLeftDrive = 3;
-      public static int backLeftSteer = 4;
+      public static int backLeftDrive = 7;
+      public static int backLeftSteer = 8;
       public static int backRightDrive = 5;
       public static int backRightSteer = 6;
-      public static int frontRightDrive = 7;
-      public static int frontRightSteer = 8;
+      public static int frontRightDrive = 3;
+      public static int frontRightSteer = 4;
     }
 
     // Vision
@@ -300,6 +300,11 @@ public class Constants {
     }
 
     public static class kFlywheels {
+      public static boolean invert = true;
+      public static double gearing = 4.0 / 3.0;
+      public static double positionConversionFactor = gearing * 2 * Math.PI;
+      public static double velocityConversionFactor = 1.0 / 60.0 * gearing * 2 * Math.PI;
+
       public static class kFlywheel1 {
         public static int canID = 13;
         public static double ks = 0;
@@ -321,10 +326,15 @@ public class Constants {
         public static double kP = 0;
         public static double kD = 0;
       }
+    }
 
+
+    public static class kHandoffRollers {
+      public static int canID = 15;
+      public static double shooterFeedVoltage = 7;
+      public static double shooterFeedTime = 0.2;
+      public static boolean inverted = false;
       public static int sensorChannel = 1; // TODO GET REAL ONE
-      public static double encoderPositionFactor = (2 * Math.PI);
-      public static double intakeVel = 3;
     }
   }
 }

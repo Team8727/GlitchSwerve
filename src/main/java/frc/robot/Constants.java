@@ -55,7 +55,8 @@ public class Constants {
   public static class kClimber {
     public static int climberID = 15;
 
-    // feedForward constants below. This is used in initializing feedForward objects: [Object Name] = SimpleMotorFeedforward(kS, kV, kA);
+    // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
+    // = SimpleMotorFeedforward(kS, kV, kA);
     public static final double kS = 0;
     public static final double kV = 0;
     public static final double kA = 0;
@@ -72,7 +73,6 @@ public class Constants {
     public static final double period = 0.02;
 
     public static final double rotationsToClimb = 0;
-
   }
   
   public enum TestMode {

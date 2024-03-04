@@ -252,8 +252,8 @@ public class Constants {
       public static double kA = 0.24565;
 
       // ProfiledPIDController
-      public static double maxVel = 2;
-      public static double maxAccel = 1;
+      public static double maxVel = 6;
+      public static double maxAccel = 10;
 
       // Encoder
       public static int portA = 3;
@@ -271,7 +271,10 @@ public class Constants {
     public static class kRollers {
       public static int rollerMotorID = 9;
       public static int sensorChannel = 6;
-      public static double intakeVoltage = -6;
+      public static double intakeVoltage1 = 3.5;
+      public static double intakeVoltage2 = 1;
+      public static double intakeVoltage3 = 0.5;
+      public static double currentLimit = 0;
       public static double intakeDelay = 0.15;
       public static double delayForOuttake = 1;
     }

@@ -66,7 +66,8 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController
         .b()
-        .whileTrue(intakeRollers.intakeCommand().raceWith(intakePivot.setIntakeDown(true)));
+        .whileTrue(
+            intakeRollers.intakeThreeStageCommand().raceWith(intakePivot.setIntakeDown(true)));
   }
 
   private void configureCommands() {

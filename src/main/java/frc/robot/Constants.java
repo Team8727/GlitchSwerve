@@ -270,13 +270,18 @@ public class Constants {
 
     public static class kRollers {
       public static int rollerMotorID = 9;
+      public static boolean invert = true;
       public static int sensorChannel = 6;
+
+      // Intake tunable parameters
       public static double intakeVoltage1 = 3.5;
       public static double intakeVoltage2 = 1;
       public static double intakeVoltage3 = 0.5;
       public static double currentLimit = 0;
       public static double intakeDelay = 0.15;
-      public static double delayForOuttake = 1;
+
+      // Outtake tunable parameters
+      public static double outtakeVoltage = -3;
     }
   }
 
@@ -297,9 +302,9 @@ public class Constants {
       // Encoder
       public static final int encoderChannelA = 0;
       public static final int encoderChannelB = 1;
-      public static final boolean invertEncoder = false;
+      public static final boolean invertEncoder = true;
       public static final double gearRatio = 2;
-      public static final double distancePerPulse = (2 * Math.PI) * gearRatio / 2048; // radians
+      public static final double distancePerPulse = (2 * Math.PI) / gearRatio / 2048; // radians
       public static final Rotation2d cogOffset = Rotation2d.fromRadians(0); // TODO find this value
 
       // Positions
@@ -320,12 +325,6 @@ public class Constants {
       public static double kG = 0; // TODO get Real
       public static double kV = 0; // TODO get Real
       public static double kA = 0; // TODO get real
-
-      // Encoder
-      public static int portA = 0;
-      public static int portB = 1;
-      public static double pulsesPerRevolution = 2048;
-      public static final double resetProfiledPIDControllerPos = 0;
 
       public static double maxVel = 0;
       public static double maxAccel = 0;
@@ -365,9 +364,13 @@ public class Constants {
     public static class kHandoffRollers {
       public static int canID = 15;
       public static double shooterFeedVoltage = 7;
+      public static double intakeVoltage = 9;
       public static double shooterFeedTime = 0.2;
       public static boolean inverted = false;
-      public static int sensorChannel = 1; // TODO GET REAL ONE
+
+      // Sensors
+      public static int upperSensorPort = 4;
+      public static int lowerSensorPort = 5;
     }
   }
 }

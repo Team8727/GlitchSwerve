@@ -33,7 +33,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             Set.of(),
             Set.of(LogData.CURRENT, LogData.VOLTAGE, LogData.POSITION));
     intakeMotor.setIdleMode(IdleMode.kBrake);
-    intakeMotor.setInverted(true);
+    intakeMotor.setInverted(kRollers.invert);
     pieceCheck = new DigitalInput(kRollers.sensorChannel);
     insideEncoder = intakeMotor.getEncoder();
     hasPiece = false;
@@ -48,11 +48,11 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     return !pieceCheck.get();
   }
 
-  private void setHasPiece(boolean piece) {
+  public void setHasPiece(boolean piece) {
     hasPiece = piece;
   }
 
-  public boolean pieceState() {
+  public boolean hasPiece() {
     return hasPiece;
   }
 
@@ -83,5 +83,9 @@ public class IntakeRollers extends SubsystemBase implements Logged {
         .andThen(this.runOnce(() -> runRollers(kRollers.intakeVoltage3)))
         .andThen(Commands.idle().until(() -> getCurrent() > kRollers.currentLimit).withTimeout(1))
         .finallyDo(() -> runRollers(0));
+  }
+
+  public Command outtakeCommand() {
+    return this.startEnd(() -> runRollers(kRollers.outtakeVoltage), () -> runRollers(0));
   }
 }

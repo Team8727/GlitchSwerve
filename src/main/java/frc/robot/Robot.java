@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -18,7 +19,6 @@ import frc.robot.Constants.SimMode;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.SysIdRoutines;
 import frc.robot.subsystems.HandoffRollers;
-import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Set;
 import monologue.Logged;
 import monologue.Monologue;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
@@ -37,7 +38,7 @@ public class Robot extends TimedRobot implements Logged {
   // Subsystems
   private Swerve swerve = new Swerve();
   private IntakeRollers intakeRollers = new IntakeRollers();
-  private IntakePivot intakePivot = new IntakePivot();
+  // private IntakePivot intakePivot = new IntakePivot();
   private ShooterFlywheels shooterFlywheels = new ShooterFlywheels();
   private ShooterPivot shooterPivot = new ShooterPivot();
   private HandoffRollers handoffRollers = new HandoffRollers();
@@ -58,28 +59,34 @@ public class Robot extends TimedRobot implements Logged {
             driverController.getHID()::getLeftBumper));
 
     // Sets the default position to be home
-    intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
-    shooterPivot.setDefaultCommand(shooterPivot.setShooterHome());
+    // intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
+    // shooterPivot.setDefaultCommand(shooterPivot.setShooterHome());
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
-
-    driverController
-        .b()
-        .whileTrue(
-            intakeRollers.intakeThreeStageCommand().raceWith(intakePivot.setIntakeDown(true)));
-  }
-
-  private void configureCommands() {
     driverController
         .a()
         .onTrue(
-            Commands.print("What the fuck")
-                .andThen(
-                    shooterFlywheels
-                        .shootTest(10)
-                        .raceWith(
-                            Commands.waitSeconds(1).andThen(handoffRollers.feedShooterCommand()))));
+            shooterFlywheels
+                .shootTest(5)
+                .raceWith(
+                    Commands.waitSeconds(1)
+                        .andThen(
+                            handoffRollers
+                                .feedShooterCommand()
+                                .deadlineWith(intakeRollers.outtakeCommand()))));
+  }
+
+  private void configureCommands() {
+    new Trigger(intakeRollers::hasPiece)
+        .and(() -> !handoffRollers.hasPiece())
+        // .and(intakePivot::isHome)
+        .onTrue(
+            intakeRollers
+                .outtakeCommand()
+                .raceWith(handoffRollers.intakeCommand())
+                .finallyDo(() -> intakeRollers.setHasPiece(false))
+                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
   }
 
   // Bind commands to triggers

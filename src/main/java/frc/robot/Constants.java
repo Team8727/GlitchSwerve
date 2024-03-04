@@ -74,13 +74,12 @@ public class Constants {
 
     public static final double rotationsToClimb = 0;
   }
-  
+
   public enum TestMode {
     NONE,
     SYSID,
     NO_BRAKE_MODE
   }
-
 
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {

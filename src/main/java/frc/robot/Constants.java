@@ -309,16 +309,23 @@ public class Constants {
 
       // Positions
       public enum Position {
-        DOWN(Rotation2d.fromDegrees(0)),
+        HOME(Rotation2d.fromDegrees(0)),
         CLIMB(Rotation2d.fromDegrees(0)),
-        AMP(Rotation2d.fromDegrees(0));
+        AMP(Rotation2d.fromDegrees(0)),
+        ACTIVE_CONTROL;
 
         public final Rotation2d angle;
 
         private Position(Rotation2d angle) {
           this.angle = angle;
         }
+
+        private Position() {
+          this.angle = null;
+        }
       }
+
+      public static final double atGoalDeadzone = 3; // degreees
 
       // FF
       public static double kS = 0; // TODO GET REAL

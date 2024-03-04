@@ -155,7 +155,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return feedForwardVoltage + feedbackVoltage;
   }
 
-  public boolean getHome() {
+  public boolean isHome() {
     return ((profiledPIDController.getGoal().position - getPhysAngle()) < 0.01)
         && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }

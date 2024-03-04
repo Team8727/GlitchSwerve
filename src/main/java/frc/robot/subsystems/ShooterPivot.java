@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
+import frc.robot.Constants.kShooter.kPivot.Position;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   private final ArmFeedforward pivotFF;
   private final ProfiledPIDController pivotController;
   private final TrapezoidProfile.State goal;
+  private Position goalPosition = Position.HOME;
 
   // Encoder objects
   private final Encoder pivotEncoder;
@@ -67,7 +69,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
     pivotEncoder =
         new Encoder(kPivot.encoderChannelA, kPivot.encoderChannelB, kPivot.invertEncoder);
     pivotEncoder.setDistancePerPulse(kPivot.distancePerPulse);
-    resetEncoder(kPivot.Position.DOWN.angle);
+    resetEncoder(Position.HOME.angle);
 
     // Controller Configs
     pivotController =
@@ -81,10 +83,10 @@ public class ShooterPivot extends SubsystemBase implements Logged {
     pivotController.setGoal(goal);
   }
 
-  // ---------- Public interface methods ----------
+  // ---------- Commands ----------
 
-  public Command goToPositionCommand(kPivot.Position position) {
-    return goToAngleCommand(position.angle);
+  public Command goToPositionCommand(Position position) {
+    return this.runOnce(() -> goalPosition = position).andThen(goToAngleCommand(position.angle));
   }
 
   public Command goToAngleCommand(Rotation2d angle) {
@@ -101,8 +103,8 @@ public class ShooterPivot extends SubsystemBase implements Logged {
     return this.runOnce(() -> setBrakeMode(on));
   }
 
-  public Command setShooterHome() {
-    return this.runOnce(() -> resetEncoder(kPivot.Position.DOWN.angle));
+  public Command setEncoderHome() {
+    return this.runOnce(() -> resetEncoder(Position.HOME.angle));
   }
 
   // ---------- Public interface methods ----------
@@ -134,6 +136,15 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   @Log.NT
   public double getAppliedVoltage() {
     return pivotMotor1.getAppliedOutput() * pivotMotor1.getBusVoltage();
+  }
+
+  @Log.NT
+  public boolean isHome() {
+    return goalPosition == Position.HOME && isAtGoal();
+  }
+
+  public boolean isAtGoal() {
+    return Math.abs(getPivotAngle().getDegrees() - getSetpointPosition()) < kPivot.atGoalDeadzone;
   }
 
   public void setBrakeMode(boolean on) {

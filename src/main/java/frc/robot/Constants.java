@@ -81,14 +81,6 @@ public class Constants {
     NO_BRAKE_MODE
   }
 
-  public static enum subsystems {
-    SWERVE,
-    INTAKEPIVOT,
-    INTAKEROLLERS,
-    SHOOTERFLYWHEELS,
-    SHOOTERPIVOT,
-    CLIMBER
-  }
 
   // Swerve subsystem constants (module constants included)
   public static class kSwerve {

@@ -45,7 +45,7 @@ public class Robot extends TimedRobot implements Logged {
   private HandoffRollers handoffRollers = new HandoffRollers();
 
   // Auto Objects
-  private AutoRoutines autos = new AutoRoutines(swerve);
+  private AutoRoutines autos = new AutoRoutines(swerve, shooterPivot);
   private Command autoCommand;
   private SysIdRoutines sysIdRoutines;
 

@@ -287,8 +287,9 @@ public class Constants {
 
   public static class kShooter {
     public static class kPivot {
-      public static int pivot1MotorID = 11;
-      public static int pivot2MotorID = 12;
+      public static final int pivotLeaderID = 11;
+      public static final int pivotFollowerID = 12;
+      public static final boolean invertMotors = false;
 
       // PD
       public static double kP = 0; // TODO get Real
@@ -305,13 +306,13 @@ public class Constants {
       public static final boolean invertEncoder = true;
       public static final double gearRatio = 2;
       public static final double distancePerPulse = (2 * Math.PI) / gearRatio / 2048; // radians
-      public static final Rotation2d cogOffset = Rotation2d.fromRadians(0); // TODO find this value
+      public static final Rotation2d cogOffset = Rotation2d.fromDegrees(0); // TODO find this value
 
       // Positions
       public enum Position {
-        HOME(Rotation2d.fromDegrees(0)),
-        CLIMB(Rotation2d.fromDegrees(0)),
-        AMP(Rotation2d.fromDegrees(0)),
+        HOME(Rotation2d.fromDegrees(125)),
+        CLIMB(Rotation2d.fromDegrees(240)),
+        AMP(Rotation2d.fromDegrees(211.5)),
         ACTIVE_CONTROL;
 
         public final Rotation2d angle;

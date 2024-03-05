@@ -5,12 +5,14 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.ShooterPivot;
 import frc.robot.subsystems.Swerve;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class AutoRoutines {
   private final Swerve swerve;
+  private final ShooterPivot shooterPivot;
 
   private final LinkedHashMap<String, PathPlannerPath> paths =
       new LinkedHashMap<String, PathPlannerPath>();
@@ -18,8 +20,9 @@ public class AutoRoutines {
   private final LinkedHashMap<String, Command> routines = new LinkedHashMap<String, Command>();
   private final SendableChooser<Command> selector = new SendableChooser<Command>();
 
-  public AutoRoutines(Swerve swerve) {
+  public AutoRoutines(Swerve swerve, ShooterPivot shooterPivot) {
     this.swerve = swerve;
+    this.shooterPivot = shooterPivot;
 
     loadCommands();
     loadPaths();
@@ -61,6 +64,7 @@ public class AutoRoutines {
             .andThen(Commands.waitSeconds(0.5))
             .andThen(swerve.followPathCommand(paths.get("fourNote3"), true))
             .andThen(Commands.waitSeconds(0.5)));
+    routines.put("shooter control", shooterPivot.testCommand());
   }
 
   // Adds all the Commands to the sendable chooser

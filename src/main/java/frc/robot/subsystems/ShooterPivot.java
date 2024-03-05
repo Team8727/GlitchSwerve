@@ -20,21 +20,25 @@ import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
 import frc.robot.Constants.kShooter.kPivot.Position;
+import frc.robot.commands.SysIdRoutines.SysIdType;
+import frc.robot.utilities.Characterizable;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import java.util.Set;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import monologue.Annotations.Log;
 import monologue.Logged;
 
-public class ShooterPivot extends SubsystemBase implements Logged {
+public class ShooterPivot extends SubsystemBase implements Logged, Characterizable {
   // Motorcontrollers
-  private final CANSparkMax pivotMotor1;
-  private final CANSparkMax pivotMotor2;
+  private final CANSparkMax pivotLeader;
+  private final CANSparkMax pivotFollower;
 
   // Controls objects
   private final ArmFeedforward pivotFF;
@@ -48,19 +52,21 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   public ShooterPivot() {
     // Motor Initializations
-    pivotMotor1 =
+    pivotLeader =
         getSparkMax(
-            kPivot.pivot1MotorID,
+            kPivot.pivotLeaderID,
             CANSparkLowLevel.MotorType.kBrushless,
             true,
             Set.of(),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
-    pivotMotor2 =
-        getFollower(pivotMotor1, kPivot.pivot2MotorID, CANSparkLowLevel.MotorType.kBrushless);
+    pivotFollower =
+        getFollower(pivotLeader, kPivot.pivotFollowerID, CANSparkLowLevel.MotorType.kBrushless);
+    pivotLeader.setInverted(kPivot.invertMotors);
+    pivotFollower.setInverted(!kPivot.invertMotors);
     setBrakeMode(true);
 
-    pivotMotor1.burnFlash();
-    pivotMotor2.burnFlash();
+    pivotLeader.burnFlash();
+    pivotFollower.burnFlash();
 
     // Feed Forwards
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
@@ -91,20 +97,29 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   public Command goToAngleCommand(Rotation2d angle) {
     return this.runOnce(this::resetProfile)
-        .andThen(this.run(() -> pivotMotor1.setVoltage(calculateVoltage(angle))));
+        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angle))));
   }
 
   public Command trackAngleCommand(Supplier<Rotation2d> angleSupplier) {
     return this.runOnce(this::resetProfile)
-        .andThen(this.run(() -> pivotMotor1.setVoltage(calculateVoltage(angleSupplier.get()))));
+        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angleSupplier.get()))));
   }
 
   public Command setBrakeModeCommand(boolean on) {
-    return this.runOnce(() -> setBrakeMode(on));
+    return this.runOnce(() -> setBrakeMode(on)).ignoringDisable(true);
   }
 
   public Command setEncoderHome() {
-    return this.runOnce(() -> resetEncoder(Position.HOME.angle));
+    return this.runOnce(() -> resetEncoder(Position.HOME.angle)).ignoringDisable(true);
+  }
+
+  public Command setVoltage(DoubleSupplier voltageSupplier) {
+    return this.run(() -> pivotLeader.setVoltage(voltageSupplier.getAsDouble()));
+  }
+
+  public Command testCommand() {
+    var entry = Shuffleboard.getTab("ShooterPivot").add("Voltage", 0).getEntry();
+    return setVoltage(() -> entry.getDouble(0));
   }
 
   // ---------- Public interface methods ----------
@@ -135,7 +150,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   @Log.NT
   public double getAppliedVoltage() {
-    return pivotMotor1.getAppliedOutput() * pivotMotor1.getBusVoltage();
+    return pivotLeader.getAppliedOutput() * pivotLeader.getBusVoltage();
   }
 
   @Log.NT
@@ -149,11 +164,11 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   public void setBrakeMode(boolean on) {
     if (on) {
-      pivotMotor1.setIdleMode(IdleMode.kBrake);
-      pivotMotor2.setIdleMode(IdleMode.kBrake);
+      pivotLeader.setIdleMode(IdleMode.kBrake);
+      pivotFollower.setIdleMode(IdleMode.kBrake);
     } else {
-      pivotMotor1.setIdleMode(IdleMode.kCoast);
-      pivotMotor2.setIdleMode(IdleMode.kCoast);
+      pivotLeader.setIdleMode(IdleMode.kCoast);
+      pivotFollower.setIdleMode(IdleMode.kCoast);
     }
   }
 
@@ -186,7 +201,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
   }
 
   // Get SysID Routine
-  public SysIdRoutine getAngularRoutine() {
+  public SysIdRoutine getRoutine(SysIdType type) {
     // Mutable holder for unit-safe voltage values, persisted to avoid reallocation.
     MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
     // Mutable holder for unit-safe angular distance values, persisted to avoid reallocation.
@@ -199,7 +214,7 @@ public class ShooterPivot extends SubsystemBase implements Logged {
         new SysIdRoutine.Config(null, stepVoltage, timeout),
         new SysIdRoutine.Mechanism(
             (volts) -> {
-              pivotMotor1.setVoltage(volts.magnitude());
+              pivotLeader.setVoltage(volts.magnitude());
             },
             (log) -> {
               log.motor("shooterPivotMotor")
@@ -223,6 +238,6 @@ public class ShooterPivot extends SubsystemBase implements Logged {
 
   @Log.NT
   public double getAppliedVolts() {
-    return pivotMotor1.getBusVoltage() * pivotMotor1.getAppliedOutput();
+    return pivotLeader.getBusVoltage() * pivotLeader.getAppliedOutput();
   }
 }

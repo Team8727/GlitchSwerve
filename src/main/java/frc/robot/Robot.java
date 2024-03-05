@@ -110,6 +110,10 @@ public class Robot extends TimedRobot implements Logged {
     driverController.a().whileTrue(Commands.deferredProxy(sysIdRoutines::getCommand));
   }
 
+  private void disableBrakeMode() {
+    shooterPivot.setBrakeModeCommand(false).schedule();
+  }
+
   @Override
   public void robotInit() {
     // Configure NetworkTables for simulation with photonvision running
@@ -149,6 +153,8 @@ public class Robot extends TimedRobot implements Logged {
       sysIdRoutines = new SysIdRoutines(Set.of(swerve));
       configureSysIdBindings();
     }
+
+    if (Constants.testMode == Constants.TestMode.NO_BRAKE_MODE) disableBrakeMode();
 
     // Configure automated commands
     configureCommands();

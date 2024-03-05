@@ -67,6 +67,20 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     return intakeMotor.getBusVoltage() * intakeMotor.getAppliedOutput();
   }
 
+  public Command intake() {
+    return this.run(() -> runRollers(kRollers.intakeVoltage1)).until(this::getPieceCheck);
+  }
+
+  public Command index() {
+    return this.run(() -> runRollers(kRollers.intakeVoltage2))
+        .withTimeout(kRollers.intakeDelay)
+        .andThen(
+            this.startEnd(() -> runRollers(kRollers.intakeVoltage3), () -> hasPiece = true)
+                .until(() -> getCurrent() > kRollers.currentLimit)
+                .withTimeout(kRollers.stage3Timeout))
+        .finallyDo(() -> runRollers(0));
+  }
+
   public Command intakeThreeStageCommand() {
     return this.run(() -> runRollers(kRollers.intakeVoltage1))
         .until(this::getPieceCheck)

@@ -37,6 +37,12 @@ public class Constants {
     DESKTOP
   }
 
+  public enum TestMode {
+    NONE,
+    SYSID,
+    NO_BRAKE_MODE
+  }
+
   // SysId
   public static enum sysIdType {
     LINEAR,
@@ -75,10 +81,19 @@ public class Constants {
     public static final double rotationsToClimb = 0;
   }
 
-  public enum TestMode {
-    NONE,
-    SYSID,
-    NO_BRAKE_MODE
+  public static class kIntakeShooter {
+    public static class kShootSpeaker {
+      public static double shootVoltage = 10;
+      public static double delay = 1;
+    }
+
+    public static class kHandOff {
+      public static double timeout = 0.75;
+    }
+
+    public static class kShootAmp {
+      public static double shootVoltage = 0; // TODO
+    }
   }
 
   // Swerve subsystem constants (module constants included)
@@ -259,8 +274,9 @@ public class Constants {
       public static int portA = 3;
       public static int portB = 2;
       public static double pulsesPerRevolution = 2048;
-      public static Rotation2d cogOffset = new Rotation2d(Math.PI);
-      public static boolean invertedEncoder = false;
+      public static final double encoderOffset = Math.PI; // TUNE THIS
+      public static final double cogOffset = 0; // TUNE THIS
+      public static boolean invertedEncoder = true;
       public static int gearRatio = 2;
 
       public static final double resetProfiledPIDControllerPos = 0;
@@ -273,12 +289,16 @@ public class Constants {
       public static boolean invert = true;
       public static int sensorChannel = 6;
 
-      // Intake tunable parameters
+      // Intake tunable parameters ----------
+      // Intake Command
       public static double intakeVoltage1 = 11;
+
+      // Index Command
       public static double intakeVoltage2 = 8;
+      public static double intakeDelay = 0.1;
       public static double intakeVoltage3 = 3;
       public static double currentLimit = 38;
-      public static double intakeDelay = 0.1;
+      public static double stage3Timeout = 2;
 
       // Outtake tunable parameters
       public static double outtakeVoltage = -3;

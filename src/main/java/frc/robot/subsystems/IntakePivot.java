@@ -40,7 +40,6 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
   private final CANSparkMax pivotMotor;
   private final Encoder pivotEncoder;
-  private double encoderOffset;
 
   // Controls
   private final ArmFeedforward pivotFF;
@@ -66,7 +65,6 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
     pivotEncoder.setReverseDirection(kPivot.invertedEncoder);
     resetEncoder();
-    resetEncoderOffset(kPivot.intakeRadiansHome);
 
     // Feedforward Configs
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
@@ -75,17 +73,12 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     pivotEncoder.reset();
 
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
-    profiledPIDController.reset(getPhysAngle());
+    profiledPIDController.reset(getPivotAngle());
     profiledPIDController.disableContinuousInput();
 
     // Button to Reset Encoder
     tab.add("Reset Intake Pivot Encoder", resetEncoder());
     tab.add("PID", profiledPIDController);
-  }
-
-  @Log.NT
-  public double getPhysAngle() {
-    return Math.PI - pivotEncoder.getDistance();
   }
 
   // MAIN CONTROLS -------------------------------
@@ -111,9 +104,13 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   // ---------- Public interface methods ----------
+  @Log.NT
+  public double getPivotAngle() {
+    return getRawEncoder() + kPivot.encoderOffset;
+  }
 
   public void resetProfile() {
-    profiledPIDController.reset(getPhysAngle(), getPivotVelocity());
+    profiledPIDController.reset(getPivotAngle(), getPivotVelocity());
   }
 
   @Log.NT
@@ -143,8 +140,8 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     // Calculate voltages
     double feedForwardVoltage =
-        pivotFF.calculate(profileSetpoint.position, profileSetpoint.velocity);
-    double feedbackVoltage = profiledPIDController.calculate(getPhysAngle());
+        pivotFF.calculate(profileSetpoint.position + kPivot.cogOffset, profileSetpoint.velocity);
+    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle());
 
     // Log Values
     this.log("FeedbackVoltage", feedbackVoltage);
@@ -155,17 +152,13 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   public boolean isHome() {
-    return ((profiledPIDController.getGoal().position - getPhysAngle()) < 0.1)
+    return ((profiledPIDController.getGoal().position - getPivotAngle()) < 0.1)
         && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }
 
   // Private hardware
   private double getRawEncoder() {
     return pivotEncoder.getDistance();
-  }
-
-  private void resetEncoderOffset(double angle) {
-    encoderOffset = angle - getRawEncoder();
   }
 
   // Reset Encoder

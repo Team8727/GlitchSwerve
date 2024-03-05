@@ -11,13 +11,14 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
+import frc.robot.Constants.kShooter.kPivot.Position;
 import frc.robot.commands.AutoRoutines;
+import frc.robot.commands.IntakeShooter;
 import frc.robot.commands.SysIdRoutines;
 import frc.robot.subsystems.HandoffRollers;
 import frc.robot.subsystems.IntakePivot;
@@ -44,6 +45,10 @@ public class Robot extends TimedRobot implements Logged {
   private ShooterPivot shooterPivot = new ShooterPivot();
   private HandoffRollers handoffRollers = new HandoffRollers();
 
+  // Factories
+  private IntakeShooter intakeShooter =
+      new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
+
   // Auto Objects
   private AutoRoutines autos = new AutoRoutines(swerve, shooterPivot);
   private Command autoCommand;
@@ -61,26 +66,16 @@ public class Robot extends TimedRobot implements Logged {
 
     // Sets the default position to be home
     intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
+    shooterPivot.setDefaultCommand(shooterPivot.goToPositionCommand(Position.HOME));
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
-    driverController
-        .rightTrigger()
-        .onTrue(
-            shooterFlywheels
-                .shootTest(10)
-                .raceWith(
-                    Commands.waitSeconds(1)
-                        .andThen(
-                            handoffRollers
-                                .feedShooterCommand()
-                                .deadlineWith(intakeRollers.outtakeCommand()))));
+    driverController.rightTrigger().onTrue(intakeShooter.shootSpeaker());
 
     driverController
         .leftTrigger()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
-        .whileTrue(
-            intakeRollers.intakeThreeStageCommand().deadlineWith(intakePivot.setIntakeDown(true)));
+        .whileTrue(intakeShooter.intakeProcess());
     // driverController.y().whileTrue(intakePivot.setIntakeDown(true).alongWith(Commands.waitSeconds(0.5).andThen(intakeRollers.outtakeCommand())));
   }
 
@@ -88,12 +83,7 @@ public class Robot extends TimedRobot implements Logged {
     new Trigger(intakeRollers::hasPiece)
         .and(() -> !handoffRollers.hasPiece())
         .and(intakePivot::isHome)
-        .onTrue(
-            intakeRollers
-                .outtakeCommand()
-                .raceWith(handoffRollers.intakeCommand())
-                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
-                .withTimeout(0.75));
+        .onTrue(intakeShooter.handOff());
   }
 
   // Bind commands to triggers

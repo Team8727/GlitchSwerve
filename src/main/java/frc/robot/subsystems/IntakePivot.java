@@ -143,8 +143,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     // Calculate voltages
     double feedForwardVoltage =
-        pivotFF.calculate(
-            profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
+        pivotFF.calculate(profileSetpoint.position, profileSetpoint.velocity);
     double feedbackVoltage = profiledPIDController.calculate(getPhysAngle());
 
     // Log Values
@@ -156,7 +155,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   public boolean isHome() {
-    return ((profiledPIDController.getGoal().position - getPhysAngle()) < 0.01)
+    return ((profiledPIDController.getGoal().position - getPhysAngle()) < 0.1)
         && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }
 

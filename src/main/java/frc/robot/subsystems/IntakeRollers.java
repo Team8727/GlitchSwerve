@@ -8,7 +8,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kIntake.kRollers;
 import frc.robot.utilities.SparkConfigurator.LogData;
@@ -48,10 +47,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     return !pieceCheck.get();
   }
 
-  public void setHasPiece(boolean piece) {
-    hasPiece = piece;
-  }
-
+  @Log.NT
   public boolean hasPiece() {
     return hasPiece;
   }
@@ -66,26 +62,29 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     return insideEncoder.getPosition();
   }
 
-  public Command intakeTwoStageCommand() {
-    return this.run(() -> runRollers(kRollers.intakeVoltage1))
-        .until(this::getPieceCheck)
-        .andThen(this.runOnce(() -> runRollers(kRollers.intakeVoltage2)))
-        .andThen(Commands.idle().until(() -> getCurrent() > kRollers.currentLimit).withTimeout(1))
-        .finallyDo(() -> runRollers(0));
+  @Log.NT
+  public double getAppliedVoltage() {
+    return intakeMotor.getBusVoltage() * intakeMotor.getAppliedOutput();
   }
 
   public Command intakeThreeStageCommand() {
     return this.run(() -> runRollers(kRollers.intakeVoltage1))
         .until(this::getPieceCheck)
         .andThen(
-            this.runOnce(() -> runRollers(kRollers.intakeVoltage2))
-                .withTimeout(kRollers.intakeDelay))
-        .andThen(this.runOnce(() -> runRollers(kRollers.intakeVoltage3)))
-        .andThen(Commands.idle().until(() -> getCurrent() > kRollers.currentLimit).withTimeout(1))
+            this.run(() -> runRollers(kRollers.intakeVoltage2)).withTimeout(kRollers.intakeDelay))
+        .andThen(
+            this.startEnd(() -> runRollers(kRollers.intakeVoltage3), () -> hasPiece = true)
+                .until(() -> getCurrent() > kRollers.currentLimit)
+                .withTimeout(2))
         .finallyDo(() -> runRollers(0));
   }
 
   public Command outtakeCommand() {
-    return this.startEnd(() -> runRollers(kRollers.outtakeVoltage), () -> runRollers(0));
+    return this.startEnd(
+        () -> runRollers(kRollers.outtakeVoltage),
+        () -> {
+          runRollers(0);
+          hasPiece = false;
+        });
   }
 }

@@ -65,37 +65,35 @@ public class Robot extends TimedRobot implements Logged {
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
     driverController
-        .a()
+        .rightTrigger()
         .onTrue(
             shooterFlywheels
-                .shootTest(5)
+                .shootTest(10)
                 .raceWith(
                     Commands.waitSeconds(1)
                         .andThen(
                             handoffRollers
                                 .feedShooterCommand()
                                 .deadlineWith(intakeRollers.outtakeCommand()))));
+
     driverController
-        .x()
-        .onTrue(
-            intakeRollers
-                .outtakeCommand()
-                .raceWith(handoffRollers.intakeCommand())
-                .finallyDo(() -> intakeRollers.setHasPiece(false))
-                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+        .leftTrigger()
+        .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
+        .whileTrue(
+            intakeRollers.intakeThreeStageCommand().deadlineWith(intakePivot.setIntakeDown(true)));
+    // driverController.y().whileTrue(intakePivot.setIntakeDown(true).alongWith(Commands.waitSeconds(0.5).andThen(intakeRollers.outtakeCommand())));
   }
 
   private void configureCommands() {
     new Trigger(intakeRollers::hasPiece)
         .and(() -> !handoffRollers.hasPiece())
         .and(intakePivot::isHome)
-        .and(shooterPivot::isHome)
         .onTrue(
             intakeRollers
                 .outtakeCommand()
                 .raceWith(handoffRollers.intakeCommand())
-                .finallyDo(() -> intakeRollers.setHasPiece(false))
-                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
+                .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)
+                .withTimeout(0.75));
   }
 
   // Bind commands to triggers
@@ -153,7 +151,7 @@ public class Robot extends TimedRobot implements Logged {
     }
 
     // Configure automated commands
-    // configureCommands();
+    configureCommands();
 
     // Start auto selector
     autoCommand = autos.getSelector().getSelected();

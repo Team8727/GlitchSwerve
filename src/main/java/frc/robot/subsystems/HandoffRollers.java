@@ -25,6 +25,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
     rollerTalonSRX.set(ControlMode.PercentOutput, voltage / 12.0);
   }
 
+  @Log.NT
   public boolean hasPiece() {
     return hasPiece;
   }
@@ -38,7 +39,12 @@ public class HandoffRollers extends SubsystemBase implements Logged {
   }
 
   public Command feedShooterCommand() {
-    return this.startEnd(() -> setVoltage(kHandoffRollers.shooterFeedVoltage), () -> setVoltage(0))
+    return this.startEnd(
+            () -> setVoltage(kHandoffRollers.shooterFeedVoltage),
+            () -> {
+              setVoltage(0);
+              hasPiece = false;
+            })
         .withTimeout(kHandoffRollers.shooterFeedTime);
   }
 

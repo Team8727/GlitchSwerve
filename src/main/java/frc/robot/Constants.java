@@ -96,7 +96,7 @@ public class Constants {
 
     // Operator interface constants
     public static class Teleop {
-      public static double translationGain = 0.85;
+      public static double translationGain = 0.93;
       public static double rotationGain = 0.7;
 
       public static boolean closedLoop = false;
@@ -241,9 +241,9 @@ public class Constants {
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
-      public static double kP = 4;
+      public static double kP = 6;
       public static double kI = 0;
-      public static double kD = 0.015;
+      public static double kD = 0.42;
       // FF
       // public static double kS = 0.4273;
       public static double kS = 0.15;
@@ -252,8 +252,8 @@ public class Constants {
       public static double kA = 0.24565;
 
       // ProfiledPIDController
-      public static double maxVel = 6;
-      public static double maxAccel = 10;
+      public static double maxVel = 8;
+      public static double maxAccel = 40;
 
       // Encoder
       public static int portA = 3;
@@ -265,7 +265,7 @@ public class Constants {
 
       public static final double resetProfiledPIDControllerPos = 0;
       public static final double intakeRadiansDown = 0.15;
-      public static final double intakeRadiansHome = Math.PI;
+      public static final double intakeRadiansHome = Math.PI - .05;
     }
 
     public static class kRollers {
@@ -274,11 +274,11 @@ public class Constants {
       public static int sensorChannel = 6;
 
       // Intake tunable parameters
-      public static double intakeVoltage1 = 3.5;
-      public static double intakeVoltage2 = 1;
-      public static double intakeVoltage3 = 0.5;
-      public static double currentLimit = 0;
-      public static double intakeDelay = 0.15;
+      public static double intakeVoltage1 = 11;
+      public static double intakeVoltage2 = 8;
+      public static double intakeVoltage3 = 3;
+      public static double currentLimit = 38;
+      public static double intakeDelay = 0.1;
 
       // Outtake tunable parameters
       public static double outtakeVoltage = -3;

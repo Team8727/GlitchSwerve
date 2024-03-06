@@ -41,6 +41,17 @@ public class IntakeShooter {
         .andThen(intakeRollers.index());
   }
 
+  public Command autoIntake() {
+    return intakeRollers
+        .intake()
+        .deadlineWith(intakePivot.setIntakeDown(true))
+        .andThen(
+            intakeRollers
+                .index()
+                .alongWith(intakePivot.setIntakeDown(false).until(intakePivot::isHome)))
+        .andThen(handOff());
+  }
+
   public Command shootSpeaker() {
     return shooterFlywheels
         .shootTest(kShootSpeaker.shootVoltage)

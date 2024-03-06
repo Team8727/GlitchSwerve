@@ -84,7 +84,7 @@ public class Constants {
   public static class kIntakeShooter {
     public static class kShootSpeaker {
       public static double shootVoltage = 10;
-      public static double delay = 1;
+      public static double delay = 0.5;
     }
 
     public static class kHandOff {

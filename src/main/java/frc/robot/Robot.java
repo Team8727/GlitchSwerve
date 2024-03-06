@@ -50,7 +50,7 @@ public class Robot extends TimedRobot implements Logged {
       new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
 
   // Auto Objects
-  private AutoRoutines autos = new AutoRoutines(swerve, shooterPivot);
+  private AutoRoutines autos = new AutoRoutines(swerve, shooterPivot, intakeShooter);
   private Command autoCommand;
   private SysIdRoutines sysIdRoutines;
 
@@ -83,6 +83,7 @@ public class Robot extends TimedRobot implements Logged {
     new Trigger(intakeRollers::hasPiece)
         .and(() -> !handoffRollers.hasPiece())
         .and(intakePivot::isHome)
+        .and(DriverStation::isTeleopEnabled)
         .onTrue(intakeShooter.handOff());
   }
 

@@ -13,6 +13,7 @@ import java.util.Map;
 public class AutoRoutines {
   private final Swerve swerve;
   private final ShooterPivot shooterPivot;
+  private final IntakeShooter intakeShooterCommands;
 
   private final LinkedHashMap<String, PathPlannerPath> paths =
       new LinkedHashMap<String, PathPlannerPath>();
@@ -20,9 +21,11 @@ public class AutoRoutines {
   private final LinkedHashMap<String, Command> routines = new LinkedHashMap<String, Command>();
   private final SendableChooser<Command> selector = new SendableChooser<Command>();
 
-  public AutoRoutines(Swerve swerve, ShooterPivot shooterPivot) {
+  public AutoRoutines(
+      Swerve swerve, ShooterPivot shooterPivot, IntakeShooter intakeShooterCommands) {
     this.swerve = swerve;
     this.shooterPivot = shooterPivot;
+    this.intakeShooterCommands = intakeShooterCommands;
 
     loadCommands();
     loadPaths();
@@ -39,13 +42,15 @@ public class AutoRoutines {
     paths.put("fourNote1", PathPlannerPath.fromChoreoTrajectory("four note.1"));
     paths.put("fourNote2", PathPlannerPath.fromChoreoTrajectory("four note.2"));
     paths.put("fourNote3", PathPlannerPath.fromChoreoTrajectory("four note.3"));
+    paths.put("testIntake", PathPlannerPath.fromChoreoTrajectory("testIntake"));
   }
 
   // Add commands to PathPlanner in this form:
   // NamedCommands.registerCommand("<Name>", <command>);
   // Must match the naming in the PathPlanner app
   private void loadCommands() {
-    NamedCommands.registerCommand("intake", Commands.none());
+    NamedCommands.registerCommand("intake", intakeShooterCommands.autoIntake());
+    NamedCommands.registerCommand("shootSpeaker", intakeShooterCommands.shootSpeaker());
   }
 
   /* Add routines to the hashmap using this format:
@@ -57,14 +62,31 @@ public class AutoRoutines {
     routines.put("No Auto", Commands.waitSeconds(0));
     routines.put(
         "fourNote",
-        Commands.waitSeconds(0.5)
-            .andThen(swerve.followPathCommand(paths.get("fourNote1"), true))
-            .andThen(Commands.waitSeconds(0.5))
-            .andThen(swerve.followPathCommand(paths.get("fourNote2"), true))
-            .andThen(Commands.waitSeconds(0.5))
-            .andThen(swerve.followPathCommand(paths.get("fourNote3"), true))
-            .andThen(Commands.waitSeconds(0.5)));
-    routines.put("shooter control", shooterPivot.testCommand());
+        intakeShooterCommands
+            .shootSpeaker()
+            .andThen(
+                swerve
+                    .followPathCommand(paths.get("fourNote1"), true)
+                    .alongWith(intakeShooterCommands.autoIntake()))
+            .andThen(intakeShooterCommands.shootSpeaker())
+            .andThen(
+                swerve
+                    .followPathCommand(paths.get("fourNote2"), true)
+                    .alongWith(intakeShooterCommands.autoIntake()))
+            .andThen(intakeShooterCommands.shootSpeaker())
+            .andThen(
+                swerve
+                    .followPathCommand(paths.get("fourNote3"), true)
+                    .alongWith(intakeShooterCommands.autoIntake()))
+            .andThen(intakeShooterCommands.shootSpeaker()));
+    routines.put(
+        "test",
+        swerve
+            .followPathCommand(paths.get("testIntake"), true)
+            .andThen(Commands.print("Finished swerve"))
+            .andThen(Commands.waitSeconds(1))
+            .andThen(intakeShooterCommands.shootSpeaker())
+            .andThen(Commands.print("Made shot")));
   }
 
   // Adds all the Commands to the sendable chooser

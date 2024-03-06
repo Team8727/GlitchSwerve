@@ -37,6 +37,7 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
@@ -131,6 +132,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private PhotonPoseEstimator photonPoseEstimator2;
 
   public Swerve() {
+    Shuffleboard.getTab("Swerve").add(this);
     // Setup controls objects
     limiter = new ChassisLimiter(kSwerve.maxTransAccel, kSwerve.maxAngAccel);
     poseEstimator =

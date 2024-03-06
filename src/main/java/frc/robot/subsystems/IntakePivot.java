@@ -46,6 +46,8 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   private final ProfiledPIDController profiledPIDController;
   private final TrapezoidProfile.Constraints constraints =
       new Constraints(kPivot.maxVel, kPivot.maxAccel);
+  private final TrapezoidProfile.State goal;
+  private final TrapezoidProfile.State currentSetpoint;
 
   // Shuffleboard
   private ShuffleboardTab tab = Shuffleboard.getTab("Active Configs");
@@ -60,6 +62,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
             Set.of(Sensors.ABSOLUTE),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     pivotMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+    pivotMotor.burnFlash();
 
     // Encoder Configs
     pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
@@ -74,6 +77,9 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
     profiledPIDController.reset(getPivotAngle());
+    goal = new TrapezoidProfile.State(getPivotAngle(), 0);
+    profiledPIDController.setGoal(goal);
+    currentSetpoint = profiledPIDController.getSetpoint();
     profiledPIDController.disableContinuousInput();
 
     // Button to Reset Encoder
@@ -131,22 +137,36 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     }
   }
 
+  @Log.NT
+  public double getSetpointPosition() {
+    return currentSetpoint.position;
+  }
+
+  @Log.NT
+  public double getSetpointVelocity() {
+    return currentSetpoint.velocity;
+  }
+
   public double calculateVoltage(double angle) {
     // Set appropriate goal
     profiledPIDController.setGoal(angle);
 
     // Get setpoint from profile
-    var profileSetpoint = profiledPIDController.getSetpoint();
+    var nextSetpoint = profiledPIDController.getSetpoint();
+
+    var accel = (nextSetpoint.velocity - currentSetpoint.velocity) / 0.02;
 
     // Calculate voltages
     double feedForwardVoltage =
-        pivotFF.calculate(profileSetpoint.position + kPivot.cogOffset, profileSetpoint.velocity);
+        pivotFF.calculate(nextSetpoint.position + kPivot.cogOffset, nextSetpoint.velocity, accel);
     double feedbackVoltage = profiledPIDController.calculate(getPivotAngle());
 
     // Log Values
     this.log("FeedbackVoltage", feedbackVoltage);
-    this.log("FeedForwardPosition", profileSetpoint.position);
-    this.log("FeedForwardVelocity", profileSetpoint.velocity);
+    this.log("Feedforward voltage", feedForwardVoltage);
+
+    currentSetpoint.position = nextSetpoint.position;
+    currentSetpoint.velocity = nextSetpoint.velocity;
 
     return feedForwardVoltage + feedbackVoltage;
   }

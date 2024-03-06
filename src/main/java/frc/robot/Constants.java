@@ -264,7 +264,7 @@ public class Constants {
       public static double kS = 0.15;
       public static double kG = 0.23;
       public static double kV = 1.1;
-      public static double kA = 0.24565;
+      public static double kA = 0;
 
       // ProfiledPIDController
       public static double maxVel = 8;
@@ -288,6 +288,7 @@ public class Constants {
       public static int rollerMotorID = 9;
       public static boolean invert = true;
       public static int sensorChannel = 6;
+      public static int currentLimit = 45;
 
       // Intake tunable parameters ----------
       // Intake Command
@@ -297,7 +298,7 @@ public class Constants {
       public static double intakeVoltage2 = 8;
       public static double intakeDelay = 0.1;
       public static double intakeVoltage3 = 3;
-      public static double currentLimit = 38;
+      public static double currentThreshold = 38;
       public static double stage3Timeout = 2;
 
       // Outtake tunable parameters

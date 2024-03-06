@@ -33,6 +33,9 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             Set.of(LogData.CURRENT, LogData.VOLTAGE, LogData.POSITION));
     intakeMotor.setIdleMode(IdleMode.kBrake);
     intakeMotor.setInverted(kRollers.invert);
+    intakeMotor.setSmartCurrentLimit(kRollers.currentLimit);
+    intakeMotor.burnFlash();
+
     pieceCheck = new DigitalInput(kRollers.sensorChannel);
     insideEncoder = intakeMotor.getEncoder();
     hasPiece = false;
@@ -77,7 +80,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
         .withTimeout(kRollers.intakeDelay)
         .andThen(
             this.startEnd(() -> runRollers(kRollers.intakeVoltage3), () -> hasPiece = true)
-                .until(() -> getCurrent() > kRollers.currentLimit)
+                .until(() -> getCurrent() > kRollers.currentThreshold)
                 .withTimeout(kRollers.stage3Timeout))
         .finallyDo(() -> runRollers(0));
   }

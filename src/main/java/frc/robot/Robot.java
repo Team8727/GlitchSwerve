@@ -76,6 +76,7 @@ public class Robot extends TimedRobot implements Logged {
         .leftTrigger()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
         .whileTrue(intakeShooter.intakeProcess());
+    // driverController.b().whileTrue(intakeShooter.shootAmp());
     // driverController.y().whileTrue(intakePivot.setIntakeDown(true).alongWith(Commands.waitSeconds(0.5).andThen(intakeRollers.outtakeCommand())));
   }
 

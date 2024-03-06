@@ -50,6 +50,8 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   private final Encoder pivotEncoder;
   private Rotation2d encoderOffset;
 
+  private final TrapezoidProfile.State currentSetpoint;
+
   public ShooterPivot() {
     // Motor Initializations
     pivotLeader =
@@ -60,7 +62,8 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
             Set.of(),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     pivotFollower =
-        getFollower(pivotLeader, kPivot.pivotFollowerID, CANSparkLowLevel.MotorType.kBrushless);
+        getFollower(
+            pivotLeader, kPivot.pivotFollowerID, CANSparkLowLevel.MotorType.kBrushless, true);
     pivotLeader.setInverted(kPivot.invertMotors);
     pivotFollower.setInverted(!kPivot.invertMotors);
     setBrakeMode(true);
@@ -85,8 +88,10 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
             kPivot.kD,
             new TrapezoidProfile.Constraints(kPivot.maxVel, kPivot.maxAccel));
     goal = new TrapezoidProfile.State(getPivotAngle().getRadians(), getPivotVelocity());
+
     pivotController.reset(goal);
     pivotController.setGoal(goal);
+    currentSetpoint = pivotController.getSetpoint();
   }
 
   // ---------- Commands ----------
@@ -124,13 +129,17 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
 
   // ---------- Public interface methods ----------
 
+  public Command setVolts(double volts) {
+    return this.run(() -> pivotLeader.setVoltage(volts)).finallyDo(() -> pivotLeader.setVoltage(0));
+  }
+
   public void resetProfile() {
     pivotController.reset(getPivotAngle().getRadians(), getPivotVelocity());
   }
 
   @Log.NT
   public Rotation2d getPivotAngle() {
-    return getRawEncoder().plus(encoderOffset);
+    return new Rotation2d(getRawEncoder().getRadians() + encoderOffset.getRadians());
   }
 
   @Log.NT
@@ -179,13 +188,22 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     pivotController.setGoal(goal);
 
     // Get setpoint from profile
-    var profileSetpoint = pivotController.getSetpoint();
+    var nextSetpoint = pivotController.getSetpoint();
+
+    var accel = (nextSetpoint.velocity - currentSetpoint.velocity) / 0.02;
 
     // Calculate voltages
     double feedForwardVoltage =
         pivotFF.calculate(
-            profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
+            nextSetpoint.position + kPivot.cogOffset.getRadians(), nextSetpoint.velocity, accel);
     double feedbackVoltage = pivotController.calculate(getPivotAngle().getRadians());
+
+    // Log Values
+    this.log("FeedbackVoltage", feedbackVoltage);
+    this.log("Feedforward voltage", feedForwardVoltage);
+
+    currentSetpoint.position = nextSetpoint.position;
+    currentSetpoint.velocity = nextSetpoint.velocity;
 
     return feedForwardVoltage + feedbackVoltage;
   }

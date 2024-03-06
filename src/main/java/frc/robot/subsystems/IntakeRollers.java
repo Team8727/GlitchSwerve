@@ -31,7 +31,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             false,
             Set.of(),
             Set.of(LogData.CURRENT, LogData.VOLTAGE, LogData.POSITION));
-    intakeMotor.setIdleMode(IdleMode.kBrake);
+    intakeMotor.setIdleMode(IdleMode.kCoast);
     intakeMotor.setInverted(kRollers.invert);
     intakeMotor.setSmartCurrentLimit(kRollers.currentLimit);
     intakeMotor.burnFlash();

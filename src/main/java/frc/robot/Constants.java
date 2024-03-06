@@ -313,7 +313,7 @@ public class Constants {
       public static final boolean invertMotors = false;
 
       // PD
-      public static double kP = 0; // TODO get Real
+      public static double kP = 1.5; // TODO get Real
       public static double kI = 0; // TODO get Real
       public static double kD = 0; // TODO get Real
       public static double minPIDOutput = -1.0;
@@ -327,7 +327,8 @@ public class Constants {
       public static final boolean invertEncoder = true;
       public static final double gearRatio = 2;
       public static final double distancePerPulse = (2 * Math.PI) / gearRatio / 2048; // radians
-      public static final Rotation2d cogOffset = Rotation2d.fromDegrees(0); // TODO find this value
+      public static final Rotation2d cogOffset =
+          Rotation2d.fromRadians(0.369); // TODO find this value
 
       // Positions
       public enum Position {
@@ -350,13 +351,13 @@ public class Constants {
       public static final double atGoalDeadzone = 3; // degreees
 
       // FF
-      public static double kS = 0; // TODO GET REAL
-      public static double kG = 0; // TODO get Real
-      public static double kV = 0; // TODO get Real
-      public static double kA = 0; // TODO get real
+      public static double kS = 0.16; // TODO GET REAL
+      public static double kG = -0.3; // TODO get Real
+      public static double kV = 1.4; // TODO get Real
+      public static double kA = 0.0; // TODO get real
 
-      public static double maxVel = 0;
-      public static double maxAccel = 0;
+      public static double maxVel = 6;
+      public static double maxAccel = 15;
 
       public static double homeRad = 0; // TODO get real radians
     }

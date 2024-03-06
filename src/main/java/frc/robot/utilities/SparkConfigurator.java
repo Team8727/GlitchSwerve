@@ -92,9 +92,10 @@ public class SparkConfigurator {
     return spark;
   }
 
-  public static CANSparkMax getFollower(CANSparkMax leader, int id, MotorType motorType) {
+  public static CANSparkMax getFollower(
+      CANSparkMax leader, int id, MotorType motorType, boolean invert) {
     CANSparkMax spark = new CANSparkMax(id, motorType);
-    spark.follow(leader);
+    spark.follow(leader, invert);
 
     int[] status = {SLOW, SLOW, SLOW, OFF, OFF, OFF, OFF};
     // status0 Applied Output & Faults

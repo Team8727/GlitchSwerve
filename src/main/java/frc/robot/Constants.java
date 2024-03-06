@@ -256,15 +256,15 @@ public class Constants {
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
-      public static double kP = 6;
+      public static double kP = 1.3;
       public static double kI = 0;
-      public static double kD = 0.42;
+      public static double kD = 0;
       // FF
       // public static double kS = 0.4273;
       public static double kS = 0.15;
-      public static double kG = 0.23;
-      public static double kV = 1.1;
-      public static double kA = 0;
+      public static double kG = 0.21;
+      public static double kV = 1.13;
+      public static double kA = 0.04;
 
       // ProfiledPIDController
       public static double maxVel = 8;
@@ -275,13 +275,13 @@ public class Constants {
       public static int portB = 2;
       public static double pulsesPerRevolution = 2048;
       public static final double encoderOffset = Math.PI; // TUNE THIS
-      public static final double cogOffset = 0; // TUNE THIS
+      public static final double cogOffset = -0.4;
       public static boolean invertedEncoder = true;
       public static int gearRatio = 2;
 
       public static final double resetProfiledPIDControllerPos = 0;
-      public static final double intakeRadiansDown = 0.15;
-      public static final double intakeRadiansHome = Math.PI - .05;
+      public static final double intakeRadiansDown = 0.1;
+      public static final double intakeRadiansHome = Math.PI;
     }
 
     public static class kRollers {

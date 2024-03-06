@@ -48,12 +48,12 @@ public class Climber extends SubsystemBase {
   public Command climbUp(double velocity) {
     return run(() -> climbMotor.setVoltage(velocity))
         .until(() -> climbEncoder.getPosition() >= kClimber.rotationsToClimb)
-        .andThen(() -> climbMotor.setVoltage(0));
+        .finallyDo(() -> climbMotor.setVoltage(0));
   }
 
   public Command climbDown(double velocity) {
     return run(() -> climbMotor.setVoltage(-velocity))
         .until(() -> climbEncoder.getPosition() <= 0)
-        .andThen(() -> climbMotor.setVoltage(0));
+        .finallyDo(() -> climbMotor.setVoltage(0));
   }
 }

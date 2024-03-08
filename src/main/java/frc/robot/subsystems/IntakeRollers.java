@@ -31,9 +31,10 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             false,
             Set.of(),
             Set.of(LogData.CURRENT, LogData.VOLTAGE, LogData.POSITION));
-    intakeMotor.setIdleMode(IdleMode.kCoast);
+    intakeMotor.setIdleMode(IdleMode.kBrake);
     intakeMotor.setInverted(kRollers.invert);
     intakeMotor.setSmartCurrentLimit(kRollers.currentLimit);
+    intakeMotor.setOpenLoopRampRate(kRollers.rampRate);
     intakeMotor.burnFlash();
 
     pieceCheck = new DigitalInput(kRollers.sensorChannel);
@@ -78,23 +79,11 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   public Command index() {
     return this.run(() -> runRollers(kRollers.intakeVoltage2))
         .withTimeout(kRollers.intakeDelay)
-        .andThen(
-            this.startEnd(() -> runRollers(kRollers.intakeVoltage3), () -> hasPiece = true)
-                .until(() -> getCurrent() > kRollers.currentThreshold)
-                .withTimeout(kRollers.stage3Timeout))
-        .finallyDo(() -> runRollers(0));
-  }
-
-  public Command intakeThreeStageCommand() {
-    return this.run(() -> runRollers(kRollers.intakeVoltage1))
-        .until(this::getPieceCheck)
-        .andThen(
-            this.run(() -> runRollers(kRollers.intakeVoltage2)).withTimeout(kRollers.intakeDelay))
-        .andThen(
-            this.startEnd(() -> runRollers(kRollers.intakeVoltage3), () -> hasPiece = true)
-                .until(() -> getCurrent() > kRollers.currentLimit)
-                .withTimeout(2))
-        .finallyDo(() -> runRollers(0));
+        .finallyDo(
+            () -> {
+              runRollers(0);
+              hasPiece = getPieceCheck();
+            });
   }
 
   public Command outtakeCommand() {

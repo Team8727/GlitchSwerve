@@ -5,6 +5,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
 import frc.robot.subsystems.Swerve;
 import java.util.LinkedHashMap;
@@ -12,7 +13,11 @@ import java.util.Map;
 
 public class AutoRoutines {
   private final Swerve swerve;
+
+  @SuppressWarnings("unused")
   private final ShooterPivot shooterPivot;
+
+  private final ShooterFlywheels flywheels;
   private final IntakeShooter intakeShooterCommands;
 
   private final LinkedHashMap<String, PathPlannerPath> paths =
@@ -22,8 +27,12 @@ public class AutoRoutines {
   private final SendableChooser<Command> selector = new SendableChooser<Command>();
 
   public AutoRoutines(
-      Swerve swerve, ShooterPivot shooterPivot, IntakeShooter intakeShooterCommands) {
+      Swerve swerve,
+      ShooterFlywheels flywheels,
+      ShooterPivot shooterPivot,
+      IntakeShooter intakeShooterCommands) {
     this.swerve = swerve;
+    this.flywheels = flywheels;
     this.shooterPivot = shooterPivot;
     this.intakeShooterCommands = intakeShooterCommands;
 
@@ -50,7 +59,7 @@ public class AutoRoutines {
   // Must match the naming in the PathPlanner app
   private void loadCommands() {
     NamedCommands.registerCommand("intake", intakeShooterCommands.autoIntake());
-    NamedCommands.registerCommand("shootSpeaker", intakeShooterCommands.shootSpeaker());
+    NamedCommands.registerCommand("shootSpeaker", intakeShooterCommands.autoShoot());
   }
 
   /* Add routines to the hashmap using this format:
@@ -62,23 +71,28 @@ public class AutoRoutines {
     routines.put("No Auto", Commands.waitSeconds(0));
     routines.put(
         "fourNote",
-        intakeShooterCommands
-            .shootSpeaker()
-            .andThen(
-                swerve
-                    .followPathCommand(paths.get("fourNote1"), true)
-                    .alongWith(intakeShooterCommands.autoIntake()))
-            .andThen(intakeShooterCommands.shootSpeaker())
-            .andThen(
-                swerve
-                    .followPathCommand(paths.get("fourNote2"), true)
-                    .alongWith(intakeShooterCommands.autoIntake()))
-            .andThen(intakeShooterCommands.shootSpeaker())
-            .andThen(
-                swerve
-                    .followPathCommand(paths.get("fourNote3"), true)
-                    .alongWith(intakeShooterCommands.autoIntake()))
-            .andThen(intakeShooterCommands.shootSpeaker()));
+        flywheels
+            .shootTest(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(
+                        intakeShooterCommands
+                            .autoShoot()
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fourNote1"), true)
+                                    .alongWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fourNote2"), true)
+                                    .alongWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fourNote3"), true)
+                                    .alongWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot()))));
     routines.put(
         "test",
         swerve

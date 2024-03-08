@@ -50,7 +50,8 @@ public class Robot extends TimedRobot implements Logged {
       new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
 
   // Auto Objects
-  private AutoRoutines autos = new AutoRoutines(swerve, shooterPivot, intakeShooter);
+  private AutoRoutines autos =
+      new AutoRoutines(swerve, shooterFlywheels, shooterPivot, intakeShooter);
   private Command autoCommand;
   private SysIdRoutines sysIdRoutines;
 
@@ -62,22 +63,27 @@ public class Robot extends TimedRobot implements Logged {
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX(),
-            driverController.getHID()::getLeftBumper));
+            () -> false));
 
     // Sets the default position to be home
     intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
-    shooterPivot.setDefaultCommand(shooterPivot.goToPositionCommand(Position.HOME));
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
-    driverController.rightTrigger().onTrue(intakeShooter.shootSpeaker());
+    driverController
+        .rightBumper()
+        .onTrue(
+            Commands.either(
+                intakeShooter.shootSpeaker(),
+                intakeShooter.shootAmp(),
+                () -> shooterPivot.getGoalPosition() == Position.HOME));
 
     driverController
-        .leftTrigger()
+        .leftBumper()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
         .whileTrue(intakeShooter.intakeProcess());
-    // driverController.b().whileTrue(intakeShooter.shootAmp());
-    // driverController.y().whileTrue(intakePivot.setIntakeDown(true).alongWith(Commands.waitSeconds(0.5).andThen(intakeRollers.outtakeCommand())));
+    driverController.leftTrigger().onTrue(intakeShooter.pivotAmp());
+    driverController.leftTrigger().onFalse(shooterPivot.goToPositionCommand(Position.HOME));
   }
 
   private void configureCommands() {
@@ -186,7 +192,13 @@ public class Robot extends TimedRobot implements Logged {
   }
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    shooterFlywheels.setDefaultCommand(
+        Commands.either(
+            shooterFlywheels.shootTest(4),
+            shooterFlywheels.shootTest(0),
+            () -> shooterPivot.getGoalPosition() != Position.AMP));
+  }
 
   @Override
   public void teleopPeriodic() {}

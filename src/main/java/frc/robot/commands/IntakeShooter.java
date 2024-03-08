@@ -52,6 +52,10 @@ public class IntakeShooter {
         .andThen(handOff());
   }
 
+  public Command autoShoot() {
+    return handoffRollers.feedShooterCommand().deadlineWith(intakeRollers.outtakeCommand());
+  }
+
   public Command shootSpeaker() {
     return shooterFlywheels
         .shootTest(kShootSpeaker.shootVoltage)
@@ -71,9 +75,16 @@ public class IntakeShooter {
         .withTimeout(kHandOff.timeout);
   }
 
-  public Command shootAmp() {
+  public Command pivotAmp() {
     return shooterPivot
         .goToPositionCommand(Position.AMP)
-        .andThen(shooterFlywheels.shootTest(kShootAmp.shootVoltage));
+        .deadlineWith(intakeRollers.outtakeCommand());
+  }
+
+  public Command shootAmp() {
+    return shooterFlywheels
+        .shootTest(kShootAmp.shootVoltage)
+        .raceWith(
+            Commands.waitSeconds(kShootAmp.delay).andThen(handoffRollers.feedShooterCommand()));
   }
 }

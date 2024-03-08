@@ -26,8 +26,9 @@ import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import java.util.Set;
 import monologue.Annotations.Log;
+import monologue.Logged;
 
-public class ShooterFlywheels extends SubsystemBase {
+public class ShooterFlywheels extends SubsystemBase implements Logged {
   // Motor Controllers
   private final CANSparkMax flywheel1;
   private final CANSparkMax flywheel2;

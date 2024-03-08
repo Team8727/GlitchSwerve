@@ -83,7 +83,7 @@ public class Constants {
 
   public static class kIntakeShooter {
     public static class kShootSpeaker {
-      public static double shootVoltage = 10;
+      public static double shootVoltage = 11;
       public static double delay = 0.5;
     }
 
@@ -92,7 +92,8 @@ public class Constants {
     }
 
     public static class kShootAmp {
-      public static double shootVoltage = 0; // TODO
+      public static double shootVoltage = 3;
+      public static double delay = 0.1;
     }
   }
 
@@ -111,7 +112,7 @@ public class Constants {
 
     // Operator interface constants
     public static class Teleop {
-      public static double translationGain = 0.93;
+      public static double translationGain = 1;
       public static double rotationGain = 0.7;
 
       public static boolean closedLoop = false;
@@ -268,7 +269,7 @@ public class Constants {
 
       // ProfiledPIDController
       public static double maxVel = 8;
-      public static double maxAccel = 40;
+      public static double maxAccel = 37;
 
       // Encoder
       public static int portA = 3;
@@ -280,7 +281,7 @@ public class Constants {
       public static int gearRatio = 2;
 
       public static final double resetProfiledPIDControllerPos = 0;
-      public static final double intakeRadiansDown = 0.1;
+      public static final double intakeRadiansDown = 0;
       public static final double intakeRadiansHome = Math.PI;
     }
 
@@ -288,7 +289,8 @@ public class Constants {
       public static int rollerMotorID = 9;
       public static boolean invert = true;
       public static int sensorChannel = 6;
-      public static int currentLimit = 45;
+      public static int currentLimit = 50;
+      public static double rampRate = 0.08;
 
       // Intake tunable parameters ----------
       // Intake Command
@@ -296,7 +298,7 @@ public class Constants {
 
       // Index Command
       public static double intakeVoltage2 = 8;
-      public static double intakeDelay = 0.1;
+      public static double intakeDelay = 0.3;
       public static double intakeVoltage3 = 3;
       public static double currentThreshold = 38;
       public static double stage3Timeout = 2;
@@ -332,11 +334,11 @@ public class Constants {
 
       // Positions
       public enum Position {
+        HARDSTOPS(Rotation2d.fromDegrees(122)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(211.5)),
         ACTIVE_CONTROL;
-
         public final Rotation2d angle;
 
         private Position(Rotation2d angle) {
@@ -348,7 +350,7 @@ public class Constants {
         }
       }
 
-      public static final double atGoalDeadzone = 3; // degreees
+      public static final Rotation2d atGoalDeadzone = Rotation2d.fromDegrees(10);
 
       // FF
       public static double kS = 0.16; // TODO GET REAL
@@ -358,8 +360,6 @@ public class Constants {
 
       public static double maxVel = 6;
       public static double maxAccel = 15;
-
-      public static double homeRad = 0; // TODO get real radians
     }
 
     public static class kFlywheels {

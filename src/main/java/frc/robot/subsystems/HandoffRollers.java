@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -18,6 +19,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
 
   public HandoffRollers() {
     rollerTalonSRX.setInverted(kHandoffRollers.inverted);
+    rollerTalonSRX.setNeutralMode(NeutralMode.Brake);
     Shuffleboard.getTab("HandoffRollers").addBoolean("Upper Sensor", this::getUpperSensor);
   }
 

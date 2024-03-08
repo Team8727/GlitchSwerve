@@ -77,7 +77,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
     profiledPIDController.reset(getPivotAngle());
-    goal = new TrapezoidProfile.State(getPivotAngle(), 0);
+    goal = new TrapezoidProfile.State(kPivot.intakeRadiansHome, 0);
     profiledPIDController.setGoal(goal);
     currentSetpoint = profiledPIDController.getSetpoint();
     profiledPIDController.disableContinuousInput();
@@ -129,6 +129,11 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return pivotMotor.getAppliedOutput() * pivotMotor.getBusVoltage();
   }
 
+  @Log.NT
+  public double getCurrent() {
+    return pivotMotor.getOutputCurrent();
+  }
+
   public void setBrakeMode(boolean on) {
     if (on) {
       pivotMotor.setIdleMode(IdleMode.kBrake);
@@ -145,6 +150,16 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   @Log.NT
   public double getSetpointVelocity() {
     return currentSetpoint.velocity;
+  }
+
+  @Log.NT
+  public double getGoalPosition() {
+    return profiledPIDController.getGoal().position;
+  }
+
+  @Log.NT
+  public double getGoalVelocity() {
+    return profiledPIDController.getGoal().velocity;
   }
 
   public double calculateVoltage(double angle) {

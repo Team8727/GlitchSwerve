@@ -20,7 +20,6 @@ import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -78,7 +77,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     pivotEncoder =
         new Encoder(kPivot.encoderChannelA, kPivot.encoderChannelB, kPivot.invertEncoder);
     pivotEncoder.setDistancePerPulse(kPivot.distancePerPulse);
-    resetEncoder(Position.HOME.angle);
+    resetEncoder(Position.HARDSTOPS.angle);
 
     // Controller Configs
     pivotController =
@@ -87,27 +86,42 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
             0,
             kPivot.kD,
             new TrapezoidProfile.Constraints(kPivot.maxVel, kPivot.maxAccel));
-    goal = new TrapezoidProfile.State(getPivotAngle().getRadians(), getPivotVelocity());
+    goal = new TrapezoidProfile.State(Position.HOME.angle.getRadians(), 0);
 
-    pivotController.reset(goal);
+    pivotController.reset(getPivotAngle().getRadians());
     pivotController.setGoal(goal);
     currentSetpoint = pivotController.getSetpoint();
+
+    this.setDefaultCommand(holdAngle());
   }
 
   // ---------- Commands ----------
 
   public Command goToPositionCommand(Position position) {
-    return this.runOnce(() -> goalPosition = position).andThen(goToAngleCommand(position.angle));
+    return this.runOnce(() -> goalPosition = position)
+        .andThen(goToAngleCommand(position.angle))
+        .withName("Go to position")
+        .asProxy();
   }
 
   public Command goToAngleCommand(Rotation2d angle) {
     return this.runOnce(this::resetProfile)
-        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angle))));
+        .andThen(setGoal(angle))
+        .andThen(
+            this.run(() -> pivotLeader.setVoltage(calculateVoltage(angle))).until(this::isAtGoal))
+        .withName("Go to angle");
+  }
+
+  public Command holdAngle() {
+    return this.run(
+            () -> pivotLeader.setVoltage(calculateVoltage(Rotation2d.fromRadians(goal.position))))
+        .withName("Hold angle");
   }
 
   public Command trackAngleCommand(Supplier<Rotation2d> angleSupplier) {
     return this.runOnce(this::resetProfile)
-        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angleSupplier.get()))));
+        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angleSupplier.get()))))
+        .asProxy();
   }
 
   public Command setBrakeModeCommand(boolean on) {
@@ -119,12 +133,16 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   }
 
   public Command setVoltage(DoubleSupplier voltageSupplier) {
-    return this.run(() -> pivotLeader.setVoltage(voltageSupplier.getAsDouble()));
+    return this.run(() -> pivotLeader.setVoltage(voltageSupplier.getAsDouble())).asProxy();
   }
 
-  public Command testCommand() {
-    var entry = Shuffleboard.getTab("ShooterPivot").add("Voltage", 0).getEntry();
-    return setVoltage(() -> entry.getDouble(0));
+  public Command setGoal(Rotation2d angle) {
+    return this.runOnce(
+        () -> {
+          goal.position = angle.getRadians();
+          goal.velocity = 0;
+          pivotController.setGoal(goal);
+        });
   }
 
   // ---------- Public interface methods ----------
@@ -148,13 +166,23 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   }
 
   @Log.NT
-  public double getSetpointPosition() {
+  public double getGoalAngle() {
     return goal.position;
   }
 
   @Log.NT
-  public double getSetpointVelocity() {
+  public double getGoalVelocity() {
     return goal.velocity;
+  }
+
+  @Log.NT
+  public double getSetpointPosition() {
+    return currentSetpoint.position;
+  }
+
+  @Log.NT
+  public double getSetpointVelocity() {
+    return currentSetpoint.velocity;
   }
 
   @Log.NT
@@ -167,8 +195,22 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     return goalPosition == Position.HOME && isAtGoal();
   }
 
+  @Log.NT
   public boolean isAtGoal() {
-    return Math.abs(getPivotAngle().getDegrees() - getSetpointPosition()) < kPivot.atGoalDeadzone;
+    return Math.abs(getPivotAngle().getRadians() - getGoalAngle())
+        < kPivot.atGoalDeadzone.getRadians();
+  }
+
+  @Log.NT
+  public Position getGoalPosition() {
+    return goalPosition;
+  }
+
+  @Log.NT
+  public String getRunningCommand() {
+    var command = getCurrentCommand();
+    if (command != null) return command.getName();
+    else return "";
   }
 
   public void setBrakeMode(boolean on) {
@@ -182,11 +224,6 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   }
 
   public double calculateVoltage(Rotation2d angle) {
-    // Set appropriate goal
-    goal.position = angle.getRadians();
-    goal.velocity = 0;
-    pivotController.setGoal(goal);
-
     // Get setpoint from profile
     var nextSetpoint = pivotController.getSetpoint();
 

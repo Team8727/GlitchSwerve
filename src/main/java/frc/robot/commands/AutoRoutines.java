@@ -2,11 +2,9 @@ package frc.robot.commands;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathPlannerPath;
-
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.Constants.kIntake.kPivot.IntakePosition;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.ShooterFlywheels;
 import frc.robot.subsystems.ShooterPivot;
@@ -34,7 +32,8 @@ public class AutoRoutines {
       Swerve swerve,
       ShooterFlywheels flywheels,
       ShooterPivot shooterPivot,
-      IntakeShooter intakeShooterCommands, IntakePivot intakePivot) {
+      IntakeShooter intakeShooterCommands,
+      IntakePivot intakePivot) {
     this.swerve = swerve;
     this.flywheels = flywheels;
     this.shooterPivot = shooterPivot;
@@ -78,8 +77,6 @@ public class AutoRoutines {
     routines.put("No Auto", Commands.waitSeconds(0));
     routines.put(
         "fourNote",
-        intakePivot.setIntakeDown(IntakePosition.DEPLOYED).withTimeout(0.1).andThen(intakePivot.setIntakeDown(IntakePosition.HOME).until(intakePivot::isHome))
-        .andThen(
         flywheels
             .shootTest(10)
             .raceWith(
@@ -103,7 +100,7 @@ public class AutoRoutines {
                                 swerve
                                     .followPathCommand(paths.get("fourNote3"), true)
                                     .alongWith(intakeShooterCommands.autoIntake().withTimeout(1.6)))
-                            .andThen(intakeShooterCommands.autoShoot())))));
+                            .andThen(intakeShooterCommands.autoShoot()))));
     routines.put(
         "test",
         swerve
@@ -112,16 +109,20 @@ public class AutoRoutines {
             .andThen(Commands.waitSeconds(1))
             .andThen(intakeShooterCommands.shootSpeaker())
             .andThen(Commands.print("Made shot")));
-    routines.put("shootTaxiLeft", 
-    flywheels.shootTest(10).raceWith(
-      Commands.waitSeconds(0.5)
-      .andThen(swerve.followPathCommand(paths.get("shootTaxiLeft"), true)))
-    );
-    routines.put("shootTaxiRight", 
-    flywheels.shootTest(10).raceWith(
-      Commands.waitSeconds(0.5)
-      .andThen(swerve.followPathCommand(paths.get("shootTaxiRight"), true)))
-    );
+    routines.put(
+        "shootTaxiLeft",
+        flywheels
+            .shootTest(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(swerve.followPathCommand(paths.get("shootTaxiLeft"), true))));
+    routines.put(
+        "shootTaxiRight",
+        flywheels
+            .shootTest(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(swerve.followPathCommand(paths.get("shootTaxiRight"), true))));
     routines.put("shootOnly", flywheels.shootTest(10));
   }
 

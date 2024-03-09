@@ -551,7 +551,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
           simNavXYaw.get()
               + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
-    if (DriverStation.isTeleop()){
+    if (DriverStation.isTeleop()) {
       updatePoseWithCameraData();
     }
     field2d.setRobotPose(getPose());

@@ -51,8 +51,7 @@ public class IntakeShooter {
                 .index()
                 .alongWith(
                     intakePivot.setIntakeDown(IntakePosition.HOME).until(intakePivot::isHome)))
-        .andThen(handOff())
-        .finallyDo(() -> intakePivot.setIntakeDown(IntakePosition.HOME).until(intakePivot::isHome));
+        .andThen(handOff());
   }
 
   public Command autoShoot() {

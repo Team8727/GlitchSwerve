@@ -22,6 +22,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   private RelativeEncoder insideEncoder;
 
   private boolean hasPiece;
+  private boolean indexing;
 
   public IntakeRollers() {
     intakeMotor =
@@ -40,6 +41,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     pieceCheck = new DigitalInput(kRollers.sensorChannel);
     insideEncoder = intakeMotor.getEncoder();
     hasPiece = false;
+    indexing = false;
   }
 
   public void runRollers(double volts) {
@@ -54,6 +56,11 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   @Log.NT
   public boolean hasPiece() {
     return hasPiece;
+  }
+
+  @Log.NT
+  public boolean isIndexing() {
+    return indexing;
   }
 
   @Log.NT
@@ -77,11 +84,16 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   }
 
   public Command index() {
-    return this.run(() -> runRollers(kRollers.intakeVoltage2))
+    return this.run(
+            () -> {
+              runRollers(kRollers.intakeVoltage2);
+              indexing = true;
+            })
         .withTimeout(kRollers.intakeDelay)
         .finallyDo(
             () -> {
               runRollers(0);
+              indexing = false;
               hasPiece = getPieceCheck();
             });
   }

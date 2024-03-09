@@ -132,7 +132,7 @@ public class Indications extends SubsystemBase {
   }
 
   private void bindTriggers() {
-    new Trigger(intakeRollers::hasPiece)
+    new Trigger(intakeRollers::isIndexing)
         .onTrue(
             Commands.startEnd(
                     () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 1),

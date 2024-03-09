@@ -126,8 +126,8 @@ public class Indications extends SubsystemBase {
             0,
             () -> true,
             () -> {
-              animations.alternate(leftStrip, Color.kAzure, Color.kPink);
-              animations.alternate(rightStrip, Color.kAzure, Color.kPink);
+              animations.alternate(leftStrip, Color.kBlack, Color.kPink);
+              animations.alternate(rightStrip, Color.kBlack, Color.kPink);
             }));
   }
 

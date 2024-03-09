@@ -20,6 +20,7 @@ import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -93,6 +94,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     currentSetpoint = pivotController.getSetpoint();
 
     this.setDefaultCommand(holdAngle());
+    Shuffleboard.getTab("ShooterPivot").addString("Intake Position", () -> goalPosition.name());
   }
 
   // ---------- Commands ----------

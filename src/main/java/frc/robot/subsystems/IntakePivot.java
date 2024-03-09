@@ -97,13 +97,11 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   public Command setIntakePivotPos(double posRad) {
-    return this.runOnce(this::resetProfile)
-        .andThen(
-            this.run(
-                    () -> {
-                      pivotMotor.setVoltage(calculateVoltage(posRad));
-                    })
-                .finallyDo(() -> pivotMotor.setVoltage(0)));
+    return this.run(
+            () -> {
+              pivotMotor.setVoltage(calculateVoltage(posRad));
+            })
+        .finallyDo(() -> pivotMotor.setVoltage(0));
   }
 
   public Command setVoltageTest(DoubleSupplier volts) {
@@ -117,8 +115,8 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return getRawEncoder() + kPivot.encoderOffset;
   }
 
-  public void resetProfile() {
-    profiledPIDController.reset(getPivotAngle(), getPivotVelocity());
+  public void reset() {
+    profiledPIDController.reset(getPivotAngle(), 0);
   }
 
   @Log.NT
@@ -176,6 +174,10 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     var nextSetpoint = profiledPIDController.getSetpoint();
 
     var accel = (nextSetpoint.velocity - currentSetpoint.velocity) / 0.02;
+
+    log("Accel", accel);
+    log("Next setpoint velocity", nextSetpoint.velocity);
+    log("Current Setpoint velocity", currentSetpoint.velocity);
 
     // Calculate voltages
     double feedForwardVoltage =

@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -61,6 +62,8 @@ public class ShooterFlywheels extends SubsystemBase implements Logged {
 
     flywheel1.setInverted(kFlywheels.invert);
     flywheel2.setInverted(!kFlywheels.invert);
+    flywheel1.setIdleMode(IdleMode.kBrake);
+    flywheel2.setIdleMode(IdleMode.kBrake);
 
     // FeedForwards
     fly1FF = new SimpleMotorFeedforward(kFlywheel1.ks, kFlywheel1.kv, kFlywheel1.ka);
@@ -95,6 +98,10 @@ public class ShooterFlywheels extends SubsystemBase implements Logged {
 
   public Command shootTest(double voltage) {
     return this.startEnd(() -> setVoltage(voltage), () -> setVoltage(0));
+  }
+
+  public Command otherShoot(double voltage) {
+    return this.runOnce(() -> setVoltage(voltage));
   }
 
   // ---------- Public interface methods ----------

@@ -92,8 +92,8 @@ public class Constants {
     }
 
     public static class kShootAmp {
-      public static double shootVoltage = 3;
-      public static double delay = 0.1;
+      public static double shootVoltage = 5;
+      public static double delay = 0.25;
     }
   }
 
@@ -107,7 +107,7 @@ public class Constants {
     public static double maxTransSpeed = 5;
     public static double maxAngSpeed = 3 * Math.PI;
 
-    public static double maxTransAccel = 1.25 * 9.81;
+    public static double maxTransAccel = 1.35 * 9.81;
     public static double maxAngAccel = 10 * 2 * Math.PI;
 
     // Operator interface constants
@@ -348,7 +348,7 @@ public class Constants {
         HARDSTOPS(Rotation2d.fromDegrees(122)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
-        AMP(Rotation2d.fromDegrees(211.5)),
+        AMP(Rotation2d.fromDegrees(200)),
         ACTIVE_CONTROL;
         public final Rotation2d angle;
 

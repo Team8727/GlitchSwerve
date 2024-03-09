@@ -205,6 +205,7 @@ public class Robot extends TimedRobot implements Logged {
 
   @Override
   public void autonomousInit() {
+    intakePivot.reset();
     autoCommand.schedule();
   }
 
@@ -220,8 +221,8 @@ public class Robot extends TimedRobot implements Logged {
   public void teleopInit() {
     shooterFlywheels.setDefaultCommand(
         Commands.either(
-            shooterFlywheels.shootTest(4),
-            shooterFlywheels.shootTest(0),
+            shooterFlywheels.otherShoot(4),
+            shooterFlywheels.otherShoot(0),
             () -> shooterPivot.getGoalPosition() != ShooterPosition.AMP));
   }
 

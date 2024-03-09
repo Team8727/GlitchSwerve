@@ -12,6 +12,7 @@ import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.GeometryUtil;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -279,9 +280,13 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
     return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
         .andThen(
-            () ->
-                setPose(
-                    path.getPreviewStartingHolonomicPose())) // TODO remove this when we get vision
+            () -> {
+              if (useAlliance && DriverStation.getAlliance().isPresent()) {
+                if (DriverStation.getAlliance().get() == Alliance.Red)
+                  setPose(GeometryUtil.flipFieldPose(path.getPreviewStartingHolonomicPose()));
+                else setPose(path.getPreviewStartingHolonomicPose());
+              }
+            }) // TODO remove this when we get vision
         // working
         .andThen(
             new FollowPathHolonomic(

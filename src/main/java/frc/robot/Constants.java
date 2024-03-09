@@ -295,6 +295,7 @@ public class Constants {
       // Intake tunable parameters ----------
       // Intake Command
       public static double intakeVoltage1 = 11;
+      public static double softIntakeFromAmpVoltage = 3;
 
       // Index Command
       public static double intakeVoltage2 = 8;

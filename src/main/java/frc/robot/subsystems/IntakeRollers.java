@@ -86,6 +86,10 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             });
   }
 
+  public Command softIntakeFromAmp() {
+    return this.startEnd(() -> runRollers(kRollers.softIntakeFromAmpVoltage), () -> runRollers(0));
+  }
+
   public Command outtakeCommand() {
     return this.startEnd(
         () -> runRollers(kRollers.outtakeVoltage),

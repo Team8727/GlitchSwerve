@@ -99,16 +99,15 @@ public class Robot extends TimedRobot implements Logged {
         .leftBumper()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
         .whileTrue(intakeShooter.intakeProcess());
-    driverController.leftTrigger().onTrue(intakeShooter.pivotAmp());
-    driverController
-        .leftTrigger()
-        .onFalse(
-            shooterPivot
-                .goToPositionCommand(ShooterPosition.HOME)
-                .deadlineWith(intakeRollers.softIntakeFromAmp()));
 
     driverController.y().onTrue(climberFactory.goUpFully());
     driverController.a().whileTrue(climberFactory.goUpFully().unless(() -> !climber.getEndGame()));
+
+    driverController
+        .leftTrigger()
+        .and(driverController.rightTrigger())
+        .and(() -> shooterPivot.getGoalPosition() == ShooterPosition.HOME)
+        .onTrue(intakeShooter.pivotAmp());
   }
 
   private void configureCommands() {

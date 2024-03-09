@@ -80,6 +80,7 @@ public class IntakeShooter {
   public Command pivotAmp() {
     return shooterPivot
         .goToPositionCommand(ShooterPosition.AMP)
+        .andThen(Commands.idle())
         .deadlineWith(intakeRollers.run(() -> intakeRollers.runRollers(-2)));
   }
 
@@ -87,6 +88,7 @@ public class IntakeShooter {
     return shooterFlywheels
         .shootTest(kShootAmp.shootVoltage)
         .raceWith(
-            Commands.waitSeconds(kShootAmp.delay).andThen(handoffRollers.feedShooterCommand()));
+            Commands.waitSeconds(kShootAmp.delay).andThen(handoffRollers.feedShooterCommand()))
+        .andThen(shooterPivot.goToPositionCommand(ShooterPosition.HOME));
   }
 }

@@ -41,6 +41,9 @@ public class Climber extends SubsystemBase {
   }
 
   //
+  public double getClimbEncoderRotations() {
+    return climbEncoder.getPosition();
+  }
 
   public boolean getIfCurrentLimit() {
     return (currentFilter.calculate(climbMotor.getOutputCurrent()) > kClimber.currentLimit);

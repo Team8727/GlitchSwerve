@@ -101,7 +101,8 @@ public class Robot extends TimedRobot implements Logged {
         .whileTrue(intakeShooter.intakeProcess());
 
     driverController.y().onTrue(climberFactory.goUpFully());
-    driverController.a().whileTrue(climberFactory.goUpFully().unless(() -> !climber.getEndGame()));
+    driverController.a().whileTrue(climber.climbDown(3).unless(() -> !climber.getEndGame()));
+    driverController.x().onTrue(Commands.either(shooterPivot.goToPositionCommand(ShooterPosition.CLIMB), climberFactory.ShooterPivotToHome(), () -> shooterPivot.getGoalPosition() != ShooterPosition.CLIMB));
 
     driverController
         .leftTrigger()

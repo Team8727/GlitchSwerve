@@ -26,11 +26,10 @@ public class ClimberFactory {
 
   public Command goUpFully() {
 
-    return Commands.runOnce(
-            () -> {
-              shooterPivot.goToPositionCommand(ShooterPosition.CLIMB);
-              climber.climbUp(3);
-            })
-        .unless(() -> !climber.getEndGame());
+    return climber.climbUp(3).unless(() -> !climber.getEndGame());
   }
-}
+
+  public Command ShooterPivotToHome() {
+    return shooterPivot.goToPositionCommand(ShooterPosition.HOME).unless(() -> climber.getClimbEncoderRotations() > 3);
+  }
+} 

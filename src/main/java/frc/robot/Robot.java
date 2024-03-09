@@ -102,7 +102,13 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController.y().onTrue(climberFactory.goUpFully());
     driverController.a().whileTrue(climber.climbDown(3).unless(() -> !climber.getEndGame()));
-    driverController.x().onTrue(Commands.either(shooterPivot.goToPositionCommand(ShooterPosition.CLIMB), climberFactory.ShooterPivotToHome(), () -> shooterPivot.getGoalPosition() != ShooterPosition.CLIMB));
+    driverController
+        .x()
+        .onTrue(
+            Commands.either(
+                shooterPivot.goToPositionCommand(ShooterPosition.CLIMB),
+                climberFactory.ShooterPivotToHome(),
+                () -> shooterPivot.getGoalPosition() != ShooterPosition.CLIMB));
 
     driverController
         .leftTrigger()
@@ -223,7 +229,7 @@ public class Robot extends TimedRobot implements Logged {
         Commands.either(
             shooterFlywheels.otherShoot(4),
             shooterFlywheels.otherShoot(0),
-            () -> shooterPivot.getGoalPosition() != ShooterPosition.AMP));
+            () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
   }
 
   @Override

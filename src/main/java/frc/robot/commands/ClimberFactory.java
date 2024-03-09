@@ -30,6 +30,8 @@ public class ClimberFactory {
   }
 
   public Command ShooterPivotToHome() {
-    return shooterPivot.goToPositionCommand(ShooterPosition.HOME).unless(() -> climber.getClimbEncoderRotations() > 3);
+    return shooterPivot
+        .goToPositionCommand(ShooterPosition.HOME)
+        .unless(() -> climber.getClimbEncoderRotations() > 3);
   }
-} 
+}

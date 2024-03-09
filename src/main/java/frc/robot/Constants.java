@@ -315,7 +315,7 @@ public class Constants {
       public static double stage3Timeout = 2;
 
       // Outtake tunable parameters
-      public static double outtakeVoltage = -3;
+      public static double outtakeVoltage = -2.7;
     }
   }
 
@@ -345,7 +345,7 @@ public class Constants {
 
       // Positions
       public enum ShooterPosition {
-        HARDSTOPS(Rotation2d.fromDegrees(122)),
+        HARDSTOPS(Rotation2d.fromDegrees(120)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(200)),
@@ -405,7 +405,7 @@ public class Constants {
     public static class kHandoffRollers {
       public static int canID = 15;
       public static double shooterFeedVoltage = 7;
-      public static double intakeVoltage = 9;
+      public static double intakeVoltage = 7;
       public static double shooterFeedTime = 0.2;
       public static boolean inverted = false;
 

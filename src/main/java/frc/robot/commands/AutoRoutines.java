@@ -87,6 +87,8 @@ public class AutoRoutines {
                     .andThen(
                         intakeShooterCommands
                             .autoShoot()
+                            .andThen(intakeShooterCommands.autoIntake().withTimeout(0.1))
+                            .andThen(Commands.waitSeconds(0.2))
                             .andThen(
                                 swerve
                                     .followPathCommand(paths.get("fourNote1"), true)

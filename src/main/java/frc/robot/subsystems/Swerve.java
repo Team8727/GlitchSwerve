@@ -413,12 +413,6 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // Convert driver field relative speeds to chassis speeds
   public ChassisSpeeds driverToChassisSpeeds(ChassisSpeeds speeds) {
     speeds = limiter.calculate(speeds);
-    var alliance = DriverStation.getAlliance();
-    if (alliance.isPresent()) {
-      if (alliance.get() == Alliance.Red)
-        return ChassisSpeeds.fromFieldRelativeSpeeds(
-            speeds, getHeading().plus(Rotation2d.fromDegrees(180)));
-    }
     return ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
   }
 

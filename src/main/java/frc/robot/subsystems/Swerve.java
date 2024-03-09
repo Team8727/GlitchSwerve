@@ -575,6 +575,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     // Create a velocity vector (full speed is a unit vector)
     var translationVelocity = VecBuilder.fill(xTranslation, yTranslation);
 
+    // If we're red alliance invert translation directions because driver is rotated 180 degrees
+    // from the blue origin reference
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Red)
+      translationVelocity = translationVelocity.times(-1);
+
     // Multiply velocity vector by max speed
     translationVelocity = translationVelocity.times(kSwerve.maxTransSpeed);
 

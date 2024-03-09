@@ -24,7 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kShooter.kPivot;
-import frc.robot.Constants.kShooter.kPivot.Position;
+import frc.robot.Constants.kShooter.kPivot.ShooterPosition;
 import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.Characterizable;
 import frc.robot.utilities.SparkConfigurator.LogData;
@@ -43,7 +43,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   private final ArmFeedforward pivotFF;
   private final ProfiledPIDController pivotController;
   private final TrapezoidProfile.State goal;
-  private Position goalPosition = Position.HOME;
+  private ShooterPosition goalPosition = ShooterPosition.HOME;
 
   // Encoder objects
   private final Encoder pivotEncoder;
@@ -77,7 +77,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     pivotEncoder =
         new Encoder(kPivot.encoderChannelA, kPivot.encoderChannelB, kPivot.invertEncoder);
     pivotEncoder.setDistancePerPulse(kPivot.distancePerPulse);
-    resetEncoder(Position.HARDSTOPS.angle);
+    resetEncoder(ShooterPosition.HARDSTOPS.angle);
 
     // Controller Configs
     pivotController =
@@ -86,7 +86,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
             0,
             kPivot.kD,
             new TrapezoidProfile.Constraints(kPivot.maxVel, kPivot.maxAccel));
-    goal = new TrapezoidProfile.State(Position.HOME.angle.getRadians(), 0);
+    goal = new TrapezoidProfile.State(ShooterPosition.HOME.angle.getRadians(), 0);
 
     pivotController.reset(getPivotAngle().getRadians());
     pivotController.setGoal(goal);
@@ -97,7 +97,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
 
   // ---------- Commands ----------
 
-  public Command goToPositionCommand(Position position) {
+  public Command goToPositionCommand(ShooterPosition position) {
     return this.runOnce(() -> goalPosition = position)
         .andThen(goToAngleCommand(position.angle))
         .withName("Go to position")
@@ -129,7 +129,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   }
 
   public Command setEncoderHome() {
-    return this.runOnce(() -> resetEncoder(Position.HOME.angle)).ignoringDisable(true);
+    return this.runOnce(() -> resetEncoder(ShooterPosition.HOME.angle)).ignoringDisable(true);
   }
 
   public Command setVoltage(DoubleSupplier voltageSupplier) {
@@ -192,7 +192,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
 
   @Log.NT
   public boolean isHome() {
-    return goalPosition == Position.HOME && isAtGoal();
+    return goalPosition == ShooterPosition.HOME && isAtGoal();
   }
 
   @Log.NT
@@ -202,7 +202,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
   }
 
   @Log.NT
-  public Position getGoalPosition() {
+  public ShooterPosition getGoalPosition() {
     return goalPosition;
   }
 

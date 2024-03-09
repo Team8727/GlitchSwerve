@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.utilities.SparkConfigurator.*;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.CANSparkBase;
@@ -28,8 +27,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kIntake.kPivot;
+import frc.robot.Constants.kIntake.kPivot.IntakePosition;
 import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.Characterizable;
+import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -48,6 +49,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
       new Constraints(kPivot.maxVel, kPivot.maxAccel);
   private final TrapezoidProfile.State goal;
   private final TrapezoidProfile.State currentSetpoint;
+  private IntakePosition goalPosition = IntakePosition.HOME;
 
   // Shuffleboard
   private ShuffleboardTab tab = Shuffleboard.getTab("Active Configs");
@@ -85,13 +87,13 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     // Button to Reset Encoder
     tab.add("Reset Intake Pivot Encoder", resetEncoder());
     tab.add("PID", profiledPIDController);
+    tab.addString("Intake Position", () -> goalPosition.name());
   }
 
   // MAIN CONTROLS -------------------------------
-  public Command setIntakeDown(boolean setDown) {
-    return setDown
-        ? setIntakePivotPos(kPivot.intakeRadiansDown)
-        : setIntakePivotPos(kPivot.intakeRadiansHome);
+  public Command setIntakeDown(IntakePosition intakePosition) {
+    return this.runOnce(() -> goalPosition = intakePosition)
+        .andThen(setIntakePivotPos(intakePosition.angle));
   }
 
   public Command setIntakePivotPos(double posRad) {
@@ -143,7 +145,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   @Log.NT
-  public double getSetpointPosition() {
+  public double getSetpointAngle() {
     return currentSetpoint.position;
   }
 
@@ -153,7 +155,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   @Log.NT
-  public double getGoalPosition() {
+  public double getGoalAngle() {
     return profiledPIDController.getGoal().position;
   }
 
@@ -162,7 +164,11 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return profiledPIDController.getGoal().velocity;
   }
 
-  public double calculateVoltage(double angle) {
+  public IntakePosition getGoalPosition() {
+    return this.goalPosition;
+  }
+
+  private double calculateVoltage(double angle) {
     // Set appropriate goal
     profiledPIDController.setGoal(angle);
 

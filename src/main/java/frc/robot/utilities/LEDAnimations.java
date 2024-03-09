@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj.util.Color;
 
 public class LEDAnimations {
   private int count = 0;
-  private int maxCount = 100;
+  private int maxCount = 200000;
 
   public LEDAnimations() {}
 

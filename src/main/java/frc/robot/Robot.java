@@ -16,11 +16,13 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
-import frc.robot.Constants.kShooter.kPivot.Position;
+import frc.robot.Constants.kIntake.kPivot.IntakePosition;
+import frc.robot.Constants.kShooter.kPivot.ShooterPosition;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.IntakeShooter;
 import frc.robot.commands.SysIdRoutines;
 import frc.robot.subsystems.HandoffRollers;
+import frc.robot.subsystems.Indications;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
@@ -45,6 +47,17 @@ public class Robot extends TimedRobot implements Logged {
   private ShooterPivot shooterPivot = new ShooterPivot();
   private HandoffRollers handoffRollers = new HandoffRollers();
 
+  @SuppressWarnings("unused")
+  private Indications indications =
+      new Indications(
+          swerve,
+          intakePivot,
+          shooterPivot,
+          intakeRollers,
+          handoffRollers,
+          shooterFlywheels,
+          driverController);
+
   // Factories
   private IntakeShooter intakeShooter =
       new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
@@ -66,7 +79,7 @@ public class Robot extends TimedRobot implements Logged {
             () -> false));
 
     // Sets the default position to be home
-    intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
+    intakePivot.setDefaultCommand(intakePivot.setIntakeDown(IntakePosition.HOME));
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
@@ -76,7 +89,7 @@ public class Robot extends TimedRobot implements Logged {
             Commands.either(
                 intakeShooter.shootSpeaker(),
                 intakeShooter.shootAmp(),
-                () -> shooterPivot.getGoalPosition() == Position.HOME));
+                () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
 
     driverController
         .leftBumper()
@@ -87,7 +100,7 @@ public class Robot extends TimedRobot implements Logged {
         .leftTrigger()
         .onFalse(
             shooterPivot
-                .goToPositionCommand(Position.HOME)
+                .goToPositionCommand(ShooterPosition.HOME)
                 .deadlineWith(intakeRollers.softIntakeFromAmp()));
   }
 
@@ -202,7 +215,7 @@ public class Robot extends TimedRobot implements Logged {
         Commands.either(
             shooterFlywheels.shootTest(4),
             shooterFlywheels.shootTest(0),
-            () -> shooterPivot.getGoalPosition() != Position.AMP));
+            () -> shooterPivot.getGoalPosition() != ShooterPosition.AMP));
   }
 
   @Override

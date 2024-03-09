@@ -283,6 +283,16 @@ public class Constants {
       public static final double resetProfiledPIDControllerPos = 0;
       public static final double intakeRadiansDown = 0;
       public static final double intakeRadiansHome = Math.PI;
+
+      public enum IntakePosition {
+        HOME(Math.PI),
+        DEPLOYED(0);
+        public final double angle;
+
+        private IntakePosition(double angle) {
+          this.angle = angle;
+        }
+      }
     }
 
     public static class kRollers {
@@ -334,7 +344,7 @@ public class Constants {
           Rotation2d.fromRadians(0.369); // TODO find this value
 
       // Positions
-      public enum Position {
+      public enum ShooterPosition {
         HARDSTOPS(Rotation2d.fromDegrees(122)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
@@ -342,11 +352,11 @@ public class Constants {
         ACTIVE_CONTROL;
         public final Rotation2d angle;
 
-        private Position(Rotation2d angle) {
+        private ShooterPosition(Rotation2d angle) {
           this.angle = angle;
         }
 
-        private Position() {
+        private ShooterPosition() {
           this.angle = null;
         }
       }
@@ -403,5 +413,12 @@ public class Constants {
       public static int upperSensorPort = 4;
       public static int lowerSensorPort = 5;
     }
+  }
+
+  public static class kIndications {
+    public static final int ledPort = 0;
+    public static final int leftStripLength = 23;
+    public static final int rightStripLength = 23;
+    public static final boolean invertDirection = false;
   }
 }

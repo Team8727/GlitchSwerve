@@ -68,7 +68,7 @@ public class Robot extends TimedRobot implements Logged {
 
   // Auto Objects
   private AutoRoutines autos =
-      new AutoRoutines(swerve, shooterFlywheels, shooterPivot, intakeShooter);
+      new AutoRoutines(swerve, shooterFlywheels, shooterPivot, intakeShooter, intakePivot);
   private Command autoCommand;
   private SysIdRoutines sysIdRoutines;
 

@@ -19,8 +19,10 @@ import frc.robot.Constants.SimMode;
 import frc.robot.Constants.kIntake.kPivot.IntakePosition;
 import frc.robot.Constants.kShooter.kPivot.ShooterPosition;
 import frc.robot.commands.AutoRoutines;
+import frc.robot.commands.ClimberFactory;
 import frc.robot.commands.IntakeShooter;
 import frc.robot.commands.SysIdRoutines;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.HandoffRollers;
 import frc.robot.subsystems.Indications;
 import frc.robot.subsystems.IntakePivot;
@@ -46,6 +48,7 @@ public class Robot extends TimedRobot implements Logged {
   private ShooterFlywheels shooterFlywheels = new ShooterFlywheels();
   private ShooterPivot shooterPivot = new ShooterPivot();
   private HandoffRollers handoffRollers = new HandoffRollers();
+  private Climber climber = new Climber();
 
   @SuppressWarnings("unused")
   private Indications indications =
@@ -61,6 +64,7 @@ public class Robot extends TimedRobot implements Logged {
   // Factories
   private IntakeShooter intakeShooter =
       new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
+  private ClimberFactory climberFactory = new ClimberFactory(climber, shooterPivot);
 
   // Auto Objects
   private AutoRoutines autos =
@@ -102,6 +106,9 @@ public class Robot extends TimedRobot implements Logged {
             shooterPivot
                 .goToPositionCommand(ShooterPosition.HOME)
                 .deadlineWith(intakeRollers.softIntakeFromAmp()));
+
+    driverController.y().onTrue(climberFactory.goUpFully());
+    driverController.a().whileTrue(climberFactory.goUpFully().unless(() -> !climber.getEndGame()));
   }
 
   private void configureCommands() {

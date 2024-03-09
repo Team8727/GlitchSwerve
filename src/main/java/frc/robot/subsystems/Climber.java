@@ -22,6 +22,7 @@ public class Climber extends SubsystemBase {
   private final SimpleMotorFeedforward feedforward;
   private final SparkPIDController climbPID;
   private LinearFilter currentFilter;
+  private boolean endGame = false;
 
   public Climber() {
     climbMotor =
@@ -55,5 +56,21 @@ public class Climber extends SubsystemBase {
     return run(() -> climbMotor.setVoltage(-velocity))
         .until(() -> climbEncoder.getPosition() <= 0)
         .finallyDo(() -> climbMotor.setVoltage(0));
+  }
+
+  public Command moveUp(double voltage) {
+    return run(() -> climbMotor.setVoltage(voltage));
+  }
+
+  public Command moveDown(double voltage) {
+    return run(() -> climbMotor.setVoltage(voltage));
+  }
+
+  public void setEndGame(boolean bool) {
+    endGame = bool;
+  }
+
+  public boolean getEndGame() {
+    return endGame;
   }
 }

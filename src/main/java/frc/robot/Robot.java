@@ -101,7 +101,7 @@ public class Robot extends TimedRobot implements Logged {
         .whileTrue(intakeShooter.intakeProcess());
 
     driverController.y().onTrue(climberFactory.goUpFully());
-    driverController.a().whileTrue(climber.climbDown(3).unless(() -> !climber.getEndGame()));
+    driverController.a().whileTrue(climber.climbDown(9));
     driverController
         .x()
         .onTrue(
@@ -114,6 +114,7 @@ public class Robot extends TimedRobot implements Logged {
         .leftTrigger()
         .and(driverController.rightTrigger())
         .and(() -> shooterPivot.getGoalPosition() == ShooterPosition.HOME)
+        .and(() -> handoffRollers.hasPiece())
         .onTrue(intakeShooter.pivotAmp());
   }
 
@@ -123,6 +124,10 @@ public class Robot extends TimedRobot implements Logged {
         .and(intakePivot::isHome)
         .and(DriverStation::isTeleopEnabled)
         .onTrue(intakeShooter.handOff());
+
+    new Trigger(intakeRollers::isIndexing)
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(intakeRollers.index());
   }
 
   // Bind commands to triggers

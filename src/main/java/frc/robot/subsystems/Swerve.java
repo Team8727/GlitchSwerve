@@ -126,11 +126,13 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private final SimDouble simNavXYaw = simNavX.getDouble("Yaw");
 
   // Vision Objects
-  private PhotonCamera camera1 = new PhotonCamera("camera1");
-  private PhotonCamera camera2 = new PhotonCamera("camera2");
+  private PhotonCamera camera1 = new PhotonCamera("we");
+  private PhotonCamera camera2 = new PhotonCamera("pigiu");
   private AprilTagFieldLayout fieldLayout;
   private PhotonPoseEstimator photonPoseEstimator1;
   private PhotonPoseEstimator photonPoseEstimator2;
+
+  private boolean visionEnable = false;
 
   public Swerve() {
     Shuffleboard.getTab("Swerve").add(this);
@@ -444,6 +446,14 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     return kSwerve.kinematics.toChassisSpeeds(getModuleStates());
   }
 
+  @Log.NT
+  public boolean getVisionEnable() {
+    return visionEnable;
+  }
+
+  public void setVisionEnable(boolean bool) {
+    visionEnable = bool;
+  }
   // AddVisionMeasurement With Two camera streams
   public void updatePoseWithCameraData() {
     if (camera1.isConnected()) {
@@ -551,7 +561,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
           simNavXYaw.get()
               + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
-    if (DriverStation.isTeleop()) {
+    if (DriverStation.isTeleop() || visionEnable) {
       updatePoseWithCameraData();
     }
     field2d.setRobotPose(getPose());

@@ -107,7 +107,7 @@ public class Constants {
     public static double maxTransSpeed = 5;
     public static double maxAngSpeed = 3 * Math.PI;
 
-    public static double maxTransAccel = 1.35 * 9.81;
+    public static double maxTransAccel = 1.4 * 9.81;
     public static double maxAngAccel = 10 * 2 * Math.PI;
 
     // Operator interface constants
@@ -308,11 +308,8 @@ public class Constants {
       public static double softIntakeFromAmpVoltage = 3;
 
       // Index Command
-      public static double intakeVoltage2 = 8;
+      public static double intakeVoltage2 = 11;
       public static double intakeDelay = 0.3;
-      public static double intakeVoltage3 = 3;
-      public static double currentThreshold = 38;
-      public static double stage3Timeout = 2;
 
       // Outtake tunable parameters
       public static double outtakeVoltage = -2.7;
@@ -345,7 +342,7 @@ public class Constants {
 
       // Positions
       public enum ShooterPosition {
-        HARDSTOPS(Rotation2d.fromDegrees(120)),
+        HARDSTOPS(Rotation2d.fromDegrees(122)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(200)),

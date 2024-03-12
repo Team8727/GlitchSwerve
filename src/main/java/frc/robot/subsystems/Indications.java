@@ -108,8 +108,8 @@ public class Indications extends SubsystemBase {
             80,
             () -> intakeRollers.hasPiece(),
             () -> {
-              animations.monotone(leftStrip, Color.kBlue);
-              animations.monotone(rightStrip, Color.kBlue);
+              animations.monotone(leftStrip, Color.kOrange);
+              animations.monotone(rightStrip, Color.kOrange);
             }));
 
     ledsRules.add(
@@ -137,7 +137,7 @@ public class Indications extends SubsystemBase {
             Commands.startEnd(
                     () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 1),
                     () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0))
-                .withTimeout(0.2));
+                .withTimeout(0.3));
   }
 
   @Override

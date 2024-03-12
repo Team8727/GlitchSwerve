@@ -36,10 +36,7 @@ public class IntakeShooter {
   }
 
   public Command intakeProcess() {
-    return intakeRollers
-        .intake()
-        .deadlineWith(intakePivot.setIntakeDown(IntakePosition.DEPLOYED))
-        .andThen(intakeRollers.index());
+    return intakeRollers.intake().deadlineWith(intakePivot.setIntakeDown(IntakePosition.DEPLOYED));
   }
 
   public Command autoIntake() {
@@ -81,7 +78,9 @@ public class IntakeShooter {
     return shooterPivot
         .goToPositionCommand(ShooterPosition.AMP)
         .andThen(Commands.idle())
-        .deadlineWith(intakeRollers.run(() -> intakeRollers.runRollers(-2)));
+        .deadlineWith(
+            intakeRollers.startEnd(
+                () -> intakeRollers.runRollers(-2), () -> intakeRollers.runRollers(0)));
   }
 
   public Command shootAmp() {

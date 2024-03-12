@@ -55,9 +55,15 @@ public class AutoRoutines {
     paths.put("fourNote1", PathPlannerPath.fromChoreoTrajectory("four note.1"));
     paths.put("fourNote2", PathPlannerPath.fromChoreoTrajectory("four note.2"));
     paths.put("fourNote3", PathPlannerPath.fromChoreoTrajectory("four note.3"));
+    paths.put("fiveNote1", PathPlannerPath.fromChoreoTrajectory("five note.1"));
+    paths.put("fiveNote2", PathPlannerPath.fromChoreoTrajectory("five note.2"));
+    paths.put("fiveNote3", PathPlannerPath.fromChoreoTrajectory("five note.3"));
+    paths.put("fiveNote4", PathPlannerPath.fromChoreoTrajectory("five note.4"));
     paths.put("shootTaxiLeft", PathPlannerPath.fromChoreoTrajectory("shootTaxiLeft"));
     paths.put("shootTaxiRight", PathPlannerPath.fromChoreoTrajectory("shootTaxiRight"));
     paths.put("testIntake", PathPlannerPath.fromChoreoTrajectory("testIntake"));
+    paths.put("far1", PathPlannerPath.fromChoreoTrajectory("far.1"));
+    paths.put("far2", PathPlannerPath.fromChoreoTrajectory("far.2"));
   }
 
   // Add commands to PathPlanner in this form:
@@ -84,22 +90,76 @@ public class AutoRoutines {
                     .andThen(
                         intakeShooterCommands
                             .autoShoot()
-                            .andThen(intakeShooterCommands.autoIntake().withTimeout(0.1))
-                            .andThen(Commands.waitSeconds(0.2))
                             .andThen(
                                 swerve
                                     .followPathCommand(paths.get("fourNote1"), true)
-                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(1.6)))
+                                    .alongWith(
+                                        Commands.waitSeconds(0.1)
+                                            .andThen(
+                                                intakeShooterCommands.autoIntake().withTimeout(2))))
                             .andThen(intakeShooterCommands.autoShoot())
                             .andThen(
                                 swerve
                                     .followPathCommand(paths.get("fourNote2"), true)
-                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(1.6)))
+                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(2.4)))
                             .andThen(intakeShooterCommands.autoShoot())
                             .andThen(
                                 swerve
                                     .followPathCommand(paths.get("fourNote3"), true)
-                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(1.6)))
+                                    .alongWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot()))));
+    routines.put(
+        "fiveNote",
+        flywheels
+            .shootTest(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(
+                        intakeShooterCommands
+                            .autoShoot()
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fiveNote1"), true)
+                                    .alongWith(
+                                        Commands.waitSeconds(0.1)
+                                            .andThen(
+                                                intakeShooterCommands.autoIntake().withTimeout(2))))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fiveNote2"), true)
+                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(2.4)))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fiveNote3"), true)
+                                    .deadlineWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fiveNote4"), true)
+                                    .alongWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot()))));
+    routines.put(
+        "far",
+        flywheels
+            .shootTest(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(
+                        intakeShooterCommands
+                            .autoShoot()
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("far1"), true)
+                                    .deadlineWith(
+                                        Commands.waitSeconds(0.1)
+                                            .andThen(intakeShooterCommands.autoIntake())))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("far2"), true)
+                                    .deadlineWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot()))));
     routines.put(
         "test",

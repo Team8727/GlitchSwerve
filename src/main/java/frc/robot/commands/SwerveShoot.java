@@ -48,19 +48,19 @@ public class SwerveShoot {
         swerve
             .teleopFocusPointCommand(
                 xTranslation, yTranslation, kSwerveShoot.blueSpeaker, () -> false)
-            .andThen(
+            .alongWith(
                 intakeShooter.angleShooterBasedOnDistance(
                     new Translation2d(swerve.getPose().getX(), swerve.getPose().getY())
                         .getDistance(kSwerveShoot.blueSpeaker)))
-            .andThen(intakeShooter.shootSpeaker()),
+            ,
         swerve
             .teleopFocusPointCommand(
                 xTranslation, yTranslation, kSwerveShoot.redSpeaker, () -> false)
-            .andThen(
+            .alongWith(
                 intakeShooter.angleShooterBasedOnDistance(
                     new Translation2d(swerve.getPose().getX(), swerve.getPose().getY())
                         .getDistance(kSwerveShoot.redSpeaker)))
-            .andThen(intakeShooter.shootSpeaker()),
+            ,
         () ->
             (DriverStation.getAlliance().isPresent()
                 && DriverStation.getAlliance().get() == Alliance.Blue));

@@ -97,11 +97,14 @@ public class Robot extends TimedRobot implements Logged {
                 intakeShooter.shootAmp(),
                 () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
 
+    // for testing only
     driverController
         .b()
         .whileTrue(
             swerveShoot.distanceShot(
                 () -> -driverController.getLeftY(), () -> -driverController.getLeftX()));
+    driverController.b().onFalse(intakeShooter.shootSpeaker());
+    
     driverController.a().whileTrue(swerveShoot.autoAmpAlign());
 
     driverController
@@ -110,7 +113,7 @@ public class Robot extends TimedRobot implements Logged {
         .whileTrue(intakeShooter.intakeProcess());
 
     driverController.y().onTrue(climberFactory.goUpFully());
-    // driverController.a().whileTrue(climber.climbDown(9));
+    driverController.a().whileTrue(climber.climbDown(9));
     driverController
         .x()
         .onTrue(

@@ -58,8 +58,23 @@ public class Constants {
     CLIMBER
   }
 
+  public static class kSwerveShoot {
+    public static Translation2d blueAmp =
+        new Translation2d(1.8515, 8.2042); // Exact field-relative position
+    public static Translation2d redAmp =
+        new Translation2d(14.700758, 8.2042); // Exact field-relative position
+    public static Rotation2d rotationAmpShot = new Rotation2d(-Math.PI / 2);
+
+    public static Translation2d blueSpeaker = new Translation2d(-0.0381, 5.547868);
+    public static Translation2d redSpeaker = new Translation2d(16.579342, 5.547868);
+
+    // TODO tune this below:
+    public static Translation2d chassisOffset =
+        new Translation2d(0, 0.4); // Should be about half the distance of the chassis
+  }
+
   public static class kClimber {
-    public static int climberID = 15;
+    public static int climberID = 18;
 
     // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
     // = SimpleMotorFeedforward(kS, kV, kA);
@@ -149,9 +164,14 @@ public class Constants {
       public static final double maxAngAccel = 0.75 * kSwerve.maxAngAccel;
       public static final double maxAngVel = 0.75 * kSwerve.maxAngSpeed;
 
+      public static final double transP = 12;
+
+      public static final double maxOnTheFlyVel = 3;
+      public static final double maxOnTheFlyAcc = 3;
+
       public static final HolonomicPathFollowerConfig pathFollowConfig =
           new HolonomicPathFollowerConfig(
-              new PIDConstants(12, 0.0, 0), // Translation PID constants
+              new PIDConstants(Auton.transP, 0.0, 0), // Translation PID constants
               new PIDConstants(angP, 0.0, angD), // Rotation PID constants
               kModule.maxWheelSpeed, // Max module speed, in m/s
               Math.pow(
@@ -323,9 +343,9 @@ public class Constants {
       public static final boolean invertMotors = false;
 
       // PD
-      public static double kP = 1.5; // TODO get Real
-      public static double kI = 0; // TODO get Real
-      public static double kD = 0; // TODO get Real
+      public static double kP = 1.5;
+      public static double kI = 0;
+      public static double kD = 0;
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
 
@@ -337,8 +357,7 @@ public class Constants {
       public static final boolean invertEncoder = true;
       public static final double gearRatio = 2;
       public static final double distancePerPulse = (2 * Math.PI) / gearRatio / 2048; // radians
-      public static final Rotation2d cogOffset =
-          Rotation2d.fromRadians(0.369); // TODO find this value
+      public static final Rotation2d cogOffset = Rotation2d.fromRadians(0.369);
 
       // Positions
       public enum ShooterPosition {
@@ -361,10 +380,10 @@ public class Constants {
       public static final Rotation2d atGoalDeadzone = Rotation2d.fromDegrees(10);
 
       // FF
-      public static double kS = 0.16; // TODO GET REAL
-      public static double kG = -0.3; // TODO get Real
-      public static double kV = 1.4; // TODO get Real
-      public static double kA = 0.0; // TODO get real
+      public static double kS = 0.16;
+      public static double kG = -0.3;
+      public static double kV = 1.4;
+      public static double kA = 0.0;
 
       public static double maxVel = 6;
       public static double maxAccel = 15;

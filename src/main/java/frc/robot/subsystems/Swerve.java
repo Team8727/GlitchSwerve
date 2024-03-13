@@ -27,6 +27,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
@@ -126,13 +127,21 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private final SimDouble simNavXYaw = simNavX.getDouble("Yaw");
 
   // Vision Objects
-  private PhotonCamera camera1 = new PhotonCamera("we");
-  private PhotonCamera camera2 = new PhotonCamera("pigiu");
+  private PhotonCamera camera1 = new PhotonCamera("we"); // camera1
+  private PhotonCamera camera2 = new PhotonCamera("pigiu"); // camera2
   private AprilTagFieldLayout fieldLayout;
   private PhotonPoseEstimator photonPoseEstimator1;
   private PhotonPoseEstimator photonPoseEstimator2;
 
   private boolean visionEnable = false;
+
+  // Path following
+  private ProfiledPIDController xController;
+  private ProfiledPIDController yController;
+  private ProfiledPIDController rotController;
+  private TrapezoidProfile.Constraints pathFollowConstraints =
+      new Constraints(Auton.maxOnTheFlyVel, Auton.maxOnTheFlyAcc);
+  private ChassisSpeeds pathChassisSpeeds;
 
   public Swerve() {
     Shuffleboard.getTab("Swerve").add(this);
@@ -173,6 +182,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
     PathPlannerLogging.setLogTargetPoseCallback(autonRobot::setPose);
+
+    // Path Follower Profiles
+    xController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    yController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    rotController = new ProfiledPIDController(Auton.angP, 0, 0, pathFollowConstraints);
+    rotController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   // ---------- Drive Commands ----------
@@ -339,6 +354,51 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
                         false)))
         .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
         .withName("driveToPoint");
+  }
+
+  public Command driveToPointProfiles(Pose2d goal) {
+    return this.runOnce(
+            () -> {
+              // Reset Profiles
+              ChassisSpeeds speeds =
+                  ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getHeading());
+              xController.reset(getPose().getX(), speeds.vxMetersPerSecond);
+              yController.reset(getPose().getY(), speeds.vyMetersPerSecond);
+              rotController.reset(
+                  getPose().getRotation().getRadians(), speeds.omegaRadiansPerSecond);
+
+              // Set Goals
+              xController.setGoal(goal.getX());
+              yController.setGoal(goal.getY());
+              rotController.setGoal(goal.getRotation().getRadians());
+            })
+        .andThen(
+            this.run(
+                () -> {
+                  // Calculate Feedback
+                  double xFB = xController.calculate(getPose().getX());
+                  double yFB = yController.calculate(getPose().getY());
+
+                  double rotFB = rotController.calculate(getPose().getRotation().getRadians());
+
+                  // Calculate full chassis Speeds
+                  pathChassisSpeeds =
+                      new ChassisSpeeds(
+                          xFB + xController.getSetpoint().velocity,
+                          yFB + yController.getSetpoint().velocity,
+                          rotFB + rotController.getSetpoint().velocity);
+                  this.log("xControllerSetpoint", xController.getSetpoint().position);
+                  this.log("yControllerSetpoint", yController.getSetpoint().position);
+                  this.log("rotController", rotController.getSetpoint().position);
+                  this.log("xSetVel", xController.getSetpoint().velocity);
+                  this.log("ySetVel", yController.getSetpoint().velocity);
+                  this.log("rotSetVel", rotController.getSetpoint().velocity);
+                  this.log("xFB", xFB);
+                  this.log("yFB", yFB);
+                  this.log("rotFB", rotFB);
+                  drive(
+                      ChassisSpeeds.fromFieldRelativeSpeeds(pathChassisSpeeds, getHeading()), true);
+                }));
   }
 
   // ---------- Other commands ----------

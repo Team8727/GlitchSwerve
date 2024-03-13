@@ -21,6 +21,7 @@ import frc.robot.Constants.kShooter.kPivot.ShooterPosition;
 import frc.robot.commands.AutoRoutines;
 import frc.robot.commands.ClimberFactory;
 import frc.robot.commands.IntakeShooter;
+import frc.robot.commands.SwerveShoot;
 import frc.robot.commands.SysIdRoutines;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.HandoffRollers;
@@ -65,6 +66,7 @@ public class Robot extends TimedRobot implements Logged {
   private IntakeShooter intakeShooter =
       new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
   private ClimberFactory climberFactory = new ClimberFactory(climber, shooterPivot);
+  private SwerveShoot swerveShoot = new SwerveShoot(swerve, intakeShooter);
 
   // Auto Objects
   private AutoRoutines autos =
@@ -96,12 +98,19 @@ public class Robot extends TimedRobot implements Logged {
                 () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
 
     driverController
+        .b()
+        .whileTrue(
+            swerveShoot.distanceShot(
+                () -> -driverController.getLeftY(), () -> -driverController.getLeftX()));
+    driverController.a().whileTrue(swerveShoot.autoAmpAlign());
+
+    driverController
         .leftBumper()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
         .whileTrue(intakeShooter.intakeProcess());
 
     driverController.y().onTrue(climberFactory.goUpFully());
-    driverController.a().whileTrue(climber.climbDown(9));
+    // driverController.a().whileTrue(climber.climbDown(9));
     driverController
         .x()
         .onTrue(

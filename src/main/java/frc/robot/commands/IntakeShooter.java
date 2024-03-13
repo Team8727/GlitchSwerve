@@ -1,5 +1,7 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,6 +24,8 @@ public class IntakeShooter {
   private final ShooterFlywheels shooterFlywheels;
   private final ShooterPivot shooterPivot;
 
+  private final InterpolatingDoubleTreeMap lookupTable = new InterpolatingDoubleTreeMap();
+
   public IntakeShooter(
       HandoffRollers handoffRollers,
       IntakePivot intakePivot,
@@ -33,6 +37,13 @@ public class IntakeShooter {
     this.intakeRollers = intakeRollers;
     this.shooterFlywheels = shooterFlywheels;
     this.shooterPivot = shooterPivot;
+
+    populateLookupTable();
+  }
+
+  private void populateLookupTable() {
+    // Distance, Angle (degrees)
+    lookupTable.put(1.0, 30.0);
   }
 
   public Command intakeProcess() {
@@ -89,5 +100,9 @@ public class IntakeShooter {
         .raceWith(
             Commands.waitSeconds(kShootAmp.delay).andThen(handoffRollers.feedShooterCommand()))
         .andThen(shooterPivot.goToPositionCommand(ShooterPosition.HOME));
+  }
+
+  public Command angleShooterBasedOnDistance(double distance) {
+    return shooterPivot.goToAngleCommand(Rotation2d.fromDegrees(lookupTable.get(distance)));
   }
 }

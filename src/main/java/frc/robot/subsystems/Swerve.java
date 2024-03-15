@@ -21,6 +21,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -127,13 +128,14 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private final SimDouble simNavXYaw = simNavX.getDouble("Yaw");
 
   // Vision Objects
-  private PhotonCamera camera1 = new PhotonCamera("we"); // camera1
-  private PhotonCamera camera2 = new PhotonCamera("pigiu"); // camera2
+  private PhotonCamera camera1 = new PhotonCamera("camera1");
+  private PhotonCamera camera2 = new PhotonCamera("camera2");
   private AprilTagFieldLayout fieldLayout;
   private PhotonPoseEstimator photonPoseEstimator1;
   private PhotonPoseEstimator photonPoseEstimator2;
+  @Log.NT private Pose3d photonPose = new Pose3d();
 
-  private boolean visionEnable = false;
+  private boolean visionEnable = true;
 
   // Path following
   private ProfiledPIDController xController;
@@ -157,7 +159,9 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
               backRightModule.getPositon(),
               frontRightModule.getPositon()
             },
-            new Pose2d(4, 4, new Rotation2d()));
+            new Pose2d(0, 0, new Rotation2d()),
+            kSwerve.stateStdDevs,
+            kSwerve.visionStdDevs);
 
     // Vision
     try {
@@ -172,12 +176,14 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera1,
             kSwerve.aprilTagCamera1PositionTransform);
+    photonPoseEstimator1.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     photonPoseEstimator2 =
         new PhotonPoseEstimator(
             fieldLayout,
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera2,
-            kSwerve.aprilTagCamera1PositionTransform);
+            kSwerve.aprilTagCamera2PositionTransform);
+    photonPoseEstimator1.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
@@ -294,16 +300,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // ---------- Autonomous Commands ----------
 
   // Follow a PathPlanner path
-  public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
+  public Command followPathCommand(PathPlannerPath path, boolean useAlliance, boolean resetPose) {
     return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
         .andThen(
             () -> {
-              if (useAlliance && DriverStation.getAlliance().isPresent()) {
-                if (DriverStation.getAlliance().get() == Alliance.Red)
-                  setPose(GeometryUtil.flipFieldPose(path.getPreviewStartingHolonomicPose()));
-                else setPose(path.getPreviewStartingHolonomicPose());
-              }
-            }) // TODO remove this when we get vision
+              if (resetPose) resetPose(path, useAlliance);
+            })
         // working
         .andThen(
             new FollowPathHolonomic(
@@ -323,12 +325,8 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
         .withName("followPathCommand");
   }
 
-  // Follow a PathPlanner path and trigger commands passed in the event map at event markers
-  public Command followPathWithEventsCommand(PathPlannerPath path) {
-    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
-        .andThen(followPathCommand(path, false))
-        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
-        .withName("followPathWithEventsCommand");
+  public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
+    return followPathCommand(path, useAlliance, false);
   }
 
   // Generate an on-the-fly path to reach a certain pose
@@ -517,16 +515,15 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // AddVisionMeasurement With Two camera streams
   public void updatePoseWithCameraData() {
     if (camera1.isConnected()) {
-      var cam1Result = camera1.getLatestResult();
-      if (cam1Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
-        double poseAmbiguity = cam1Result.getBestTarget().getPoseAmbiguity();
-        if (poseAmbiguity < 0.2
-            && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
-          Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator1.update();
-          poseEstimator.addVisionMeasurement(
-              estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
-              estimatedGlobalPoseVision.get().timestampSeconds);
-        }
+      var result = camera1.getLatestResult();
+      Optional<EstimatedRobotPose> estimatedGlobalPose = photonPoseEstimator1.update(result);
+      if (estimatedGlobalPose.isPresent()) {
+        double distance = result.getBestTarget().getBestCameraToTarget().getTranslation().getNorm();
+        poseEstimator.addVisionMeasurement(
+            estimatedGlobalPose.get().estimatedPose.toPose2d(),
+            estimatedGlobalPose.get().timestampSeconds,
+            kSwerve.visionStdDevs.times(distance * kSwerve.visionScalingFactor));
+        photonPose = estimatedGlobalPose.get().estimatedPose;
       }
     }
     if (camera2.isConnected()) {
@@ -661,6 +658,16 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     // Construct chassis speeds and return
     return new ChassisSpeeds(
         translationVelocity.get(0, 0), translationVelocity.get(1, 0), zRotation);
+  }
+
+  private void resetPose(PathPlannerPath path, boolean useAlliance) {
+    var trajectory = path.getTrajectory(new ChassisSpeeds(), new Rotation2d());
+    var initialPose = trajectory.getInitialTargetHolonomicPose();
+    if (useAlliance
+        && DriverStation.getAlliance().isPresent()
+        && DriverStation.getAlliance().get() == Alliance.Red) {
+      setPose(GeometryUtil.flipFieldPose(initialPose));
+    } else setPose(initialPose);
   }
 
   private void setStateSysId(Measure<Voltage> volts, SysIdType type) {

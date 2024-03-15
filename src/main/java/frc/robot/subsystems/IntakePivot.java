@@ -91,7 +91,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   // MAIN CONTROLS -------------------------------
-  public Command setIntakeDown(IntakePosition intakePosition) {
+  public Command setIntakePosition(IntakePosition intakePosition) {
     return this.runOnce(() -> goalPosition = intakePosition)
         .andThen(setIntakePivotPos(intakePosition.angle));
   }
@@ -197,6 +197,10 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   public boolean isHome() {
     return ((profiledPIDController.getGoal().position - getPivotAngle()) < 0.1)
         && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
+  }
+
+  public boolean isAtGoal() {
+    return (profiledPIDController.getGoal().position - getPivotAngle()) < 0.1;
   }
 
   // Private hardware

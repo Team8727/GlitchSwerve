@@ -80,7 +80,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
 
   public Command intake() {
     return this.startEnd(
-            () -> runRollers(kRollers.intakeVoltage1),
+            () -> runRollers(kRollers.intakeVoltage),
             () -> {
               runRollers(0);
               if (getPieceCheck()) indexing = true;
@@ -89,8 +89,8 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   }
 
   public Command index() {
-    return this.run(() -> runRollers(kRollers.intakeVoltage2))
-        .withTimeout(kRollers.intakeDelay)
+    return this.run(() -> runRollers(kRollers.intakeVoltage))
+        .withTimeout(kRollers.intakeTime)
         .finallyDo(
             () -> {
               runRollers(0);
@@ -110,5 +110,10 @@ public class IntakeRollers extends SubsystemBase implements Logged {
           runRollers(0);
           hasPiece = false;
         });
+  }
+
+  public Command unjamIntake() {
+    return this.startEnd(() -> runRollers(kRollers.intakeVoltage), () -> runRollers(0))
+        .withTimeout(kRollers.ejectIntakeTime);
   }
 }

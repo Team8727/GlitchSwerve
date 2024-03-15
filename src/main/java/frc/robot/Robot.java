@@ -85,7 +85,7 @@ public class Robot extends TimedRobot implements Logged {
             () -> false));
 
     // Sets the default position to be home
-    intakePivot.setDefaultCommand(intakePivot.setIntakeDown(IntakePosition.HOME));
+    intakePivot.setDefaultCommand(intakePivot.setIntakePosition(IntakePosition.HOME));
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());

@@ -60,6 +60,15 @@ public class HandoffRollers extends SubsystemBase implements Logged {
         .until(this::getUpperSensor);
   }
 
+  public Command outtakeCommand() {
+    return this.startEnd(
+        () -> setVoltage(kHandoffRollers.shooterFeedVoltage),
+        () -> {
+          setVoltage(0);
+          hasPiece = false;
+        });
+  }
+
   @Log.NT
   public double getVoltage() {
     return rollerTalonSRX.getMotorOutputVoltage();

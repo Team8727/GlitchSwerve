@@ -5,7 +5,9 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.kIntake;
 import frc.robot.Constants.kIntake.kPivot.IntakePosition;
+import frc.robot.Constants.kIntake.kRollers;
 import frc.robot.Constants.kIntakeShooter.kHandOff;
 import frc.robot.Constants.kIntakeShooter.kShootAmp;
 import frc.robot.Constants.kIntakeShooter.kShootSpeaker;
@@ -47,18 +49,20 @@ public class IntakeShooter {
   }
 
   public Command intakeProcess() {
-    return intakeRollers.intake().deadlineWith(intakePivot.setIntakeDown(IntakePosition.DEPLOYED));
+    return Commands.waitSeconds(kIntake.kRollers.intakeDeployWait)
+        .andThen(intakeRollers.intake())
+        .deadlineWith(intakePivot.setIntakePosition(IntakePosition.DEPLOYED));
   }
 
   public Command autoIntake() {
-    return intakeRollers
-        .intake()
-        .deadlineWith(intakePivot.setIntakeDown(IntakePosition.DEPLOYED))
+    return Commands.waitSeconds(kIntake.kRollers.intakeDeployWait)
+        .andThen(intakeRollers.intake())
+        .deadlineWith(intakePivot.setIntakePosition(IntakePosition.DEPLOYED))
         .andThen(
             intakeRollers
                 .index()
                 .alongWith(
-                    intakePivot.setIntakeDown(IntakePosition.HOME).until(intakePivot::isHome)))
+                    intakePivot.setIntakePosition(IntakePosition.HOME).until(intakePivot::isHome)))
         .andThen(handOff());
   }
 
@@ -104,5 +108,16 @@ public class IntakeShooter {
 
   public Command angleShooterBasedOnDistance(double distance) {
     return shooterPivot.goToAngleCommand(Rotation2d.fromDegrees(lookupTable.get(distance)));
+  }
+  
+  public Command unjamNote() {
+    return intakeRollers
+        .unjamIntake()
+        .deadlineWith(handoffRollers.outtakeCommand())
+        .andThen(
+            Commands.idle()
+                .until(intakePivot::isAtGoal)
+                .andThen(intakeRollers.outtakeCommand().withTimeout(kRollers.ejectIntakeTime)))
+        .deadlineWith(intakePivot.setIntakePosition(IntakePosition.EJECT));
   }
 }

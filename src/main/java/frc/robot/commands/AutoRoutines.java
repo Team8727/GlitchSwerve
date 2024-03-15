@@ -92,7 +92,7 @@ public class AutoRoutines {
                             .autoShoot()
                             .andThen(
                                 swerve
-                                    .followPathCommand(paths.get("fourNote1"), true)
+                                    .followPathCommand(paths.get("fourNote1"), true, true)
                                     .alongWith(
                                         Commands.waitSeconds(0.1)
                                             .andThen(
@@ -119,7 +119,7 @@ public class AutoRoutines {
                             .autoShoot()
                             .andThen(
                                 swerve
-                                    .followPathCommand(paths.get("fiveNote1"), true)
+                                    .followPathCommand(paths.get("fiveNote1"), true, true)
                                     .alongWith(
                                         Commands.waitSeconds(0.1)
                                             .andThen(
@@ -151,7 +151,7 @@ public class AutoRoutines {
                             .autoShoot()
                             .andThen(
                                 swerve
-                                    .followPathCommand(paths.get("far1"), true)
+                                    .followPathCommand(paths.get("far1"), true, true)
                                     .deadlineWith(
                                         Commands.waitSeconds(0.1)
                                             .andThen(intakeShooterCommands.autoIntake())))

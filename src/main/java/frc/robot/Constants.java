@@ -277,9 +277,10 @@ public class Constants {
     public static final Matrix<N3, N1> stateStdDevs =
         MatBuilder.fill(Nat.N3(), Nat.N1(), 0.02, 0.02, 0.01);
     public static final Matrix<N3, N1> visionStdDevs =
-        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.05, 0.05, 0.3);
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.03, 0.03, 0.25);
     public static final double visionScalingFactor =
-        4; // scaling factor applied to the visionStdDevs per meter
+        3; // scaling factor applied to the visionStdDevs per meter bigger means trust less at a
+    // distance
   }
 
   public static class kIntake {
@@ -339,7 +340,7 @@ public class Constants {
       // Intake Command
       public static double intakeVoltage = 11;
       public static double softIntakeFromAmpVoltage = 3;
-      public static double intakeTime = 0.3;
+      public static double intakeTime = 0.25;
       public static double intakeDeployWait = 0.3;
 
       // Outtake tunable parameters
@@ -373,8 +374,8 @@ public class Constants {
 
       // Positions
       public enum ShooterPosition {
-        HARDSTOPS(Rotation2d.fromDegrees(125)),
-        HOME(Rotation2d.fromDegrees(125)),
+        HARDSTOPS(Rotation2d.fromDegrees(124)),
+        HOME(Rotation2d.fromDegrees(124)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(200)),
         ACTIVE_CONTROL;

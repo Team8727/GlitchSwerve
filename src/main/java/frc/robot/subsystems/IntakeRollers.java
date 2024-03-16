@@ -83,7 +83,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             () -> runRollers(kRollers.intakeVoltage),
             () -> {
               runRollers(0);
-              if (getPieceCheck()) indexing = true;
+              indexing = true;
             })
         .until(this::getPieceCheck);
   }
@@ -95,7 +95,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
             () -> {
               runRollers(0);
               indexing = false;
-              hasPiece = getPieceCheck();
+              hasPiece = true;
             });
   }
 

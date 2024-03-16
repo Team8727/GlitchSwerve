@@ -62,7 +62,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
 
   public Command outtakeCommand() {
     return this.startEnd(
-        () -> setVoltage(kHandoffRollers.shooterFeedVoltage),
+        () -> setVoltage(-kHandoffRollers.intakeVoltage),
         () -> {
           setVoltage(0);
           hasPiece = false;

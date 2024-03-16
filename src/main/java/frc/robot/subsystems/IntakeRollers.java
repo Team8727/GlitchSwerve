@@ -116,4 +116,9 @@ public class IntakeRollers extends SubsystemBase implements Logged {
     return this.startEnd(() -> runRollers(kRollers.intakeVoltage), () -> runRollers(0))
         .withTimeout(kRollers.ejectIntakeTime);
   }
+
+  public Command eject() {
+    return this.startEnd(() -> runRollers(-kRollers.intakeVoltage), () -> runRollers(0))
+        .withTimeout(kRollers.ejectIntakeTime);
+  }
 }

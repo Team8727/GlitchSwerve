@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
@@ -41,6 +42,7 @@ import monologue.Monologue;
 
 public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
+  private CommandJoystick oopsieWoopsieController = new CommandJoystick(1);
 
   // Subsystems
   private Swerve swerve = new Swerve();
@@ -97,23 +99,20 @@ public class Robot extends TimedRobot implements Logged {
                 intakeShooter.shootAmp(),
                 () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
 
-    // for testing only
-    driverController
-        .b()
-        .whileTrue(
-            swerveShoot.distanceShot(
-                () -> -driverController.getLeftY(), () -> -driverController.getLeftX()));
-    driverController.b().onFalse(intakeShooter.shootSpeaker());
-    
-    driverController.a().whileTrue(swerveShoot.autoAmpAlign());
-
     driverController
         .leftBumper()
         .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
         .whileTrue(intakeShooter.intakeProcess());
 
     driverController.y().onTrue(climberFactory.goUpFully());
-    driverController.a().whileTrue(climber.climbDown(9));
+    driverController.a().whileTrue(climber.climbDown(11));
+    driverController.b().onTrue(intakeShooter.unjamNote());
+
+    oopsieWoopsieController.button(7).onTrue(intakeShooter.unjamNote());
+    oopsieWoopsieController
+        .button(8)
+        .onTrue(intakeRollers.intake().deadlineWith(handoffRollers.outtakeCommand()));
+
     driverController
         .x()
         .onTrue(

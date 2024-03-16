@@ -120,25 +120,24 @@ public class AutoRoutines {
                             .andThen(
                                 swerve
                                     .followPathCommand(paths.get("fiveNote1"), true, true)
-                                    .alongWith(
+                                    .deadlineWith(
                                         Commands.waitSeconds(0.1)
-                                            .andThen(
-                                                intakeShooterCommands.autoIntake().withTimeout(2))))
+                                            .andThen(intakeShooterCommands.autoIntake())))
                             .andThen(intakeShooterCommands.autoShoot())
                             .andThen(
                                 swerve
-                                    .followPathCommand(paths.get("fiveNote2"), true)
-                                    .alongWith(intakeShooterCommands.autoIntake().withTimeout(2.4)))
-                            .andThen(intakeShooterCommands.autoShoot())
-                            .andThen(
-                                swerve
-                                    .followPathCommand(paths.get("fiveNote3"), true)
+                                    .followPathCommand(paths.get("fiveNote2"), true, true)
                                     .deadlineWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot())
                             .andThen(
                                 swerve
-                                    .followPathCommand(paths.get("fiveNote4"), true)
-                                    .alongWith(intakeShooterCommands.autoIntake()))
+                                    .followPathCommand(paths.get("fiveNote3"), true, true)
+                                    .deadlineWith(intakeShooterCommands.autoIntake()))
+                            .andThen(intakeShooterCommands.autoShoot())
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("fiveNote4"), true, true)
+                                    .deadlineWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot()))));
     routines.put(
         "far",

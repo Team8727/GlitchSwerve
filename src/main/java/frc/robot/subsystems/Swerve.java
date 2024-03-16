@@ -135,7 +135,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private PhotonPoseEstimator photonPoseEstimator2;
   @Log.NT private Pose3d photonPose = new Pose3d();
 
-  private boolean visionEnable = true;
+  private boolean visionEnable = false;
 
   // Path following
   private ProfiledPIDController xController;
@@ -618,7 +618,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
           simNavXYaw.get()
               + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
-    if (DriverStation.isTeleop() || visionEnable) {
+    if (DriverStation.isTeleop()) {
       updatePoseWithCameraData();
     }
     field2d.setRobotPose(getPose());

@@ -7,7 +7,6 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.kIntake;
 import frc.robot.Constants.kIntake.kPivot.IntakePosition;
-import frc.robot.Constants.kIntake.kRollers;
 import frc.robot.Constants.kIntakeShooter.kHandOff;
 import frc.robot.Constants.kIntakeShooter.kShootAmp;
 import frc.robot.Constants.kIntakeShooter.kShootSpeaker;
@@ -95,7 +94,7 @@ public class IntakeShooter {
         .andThen(Commands.idle())
         .deadlineWith(
             intakeRollers.startEnd(
-                () -> intakeRollers.runRollers(-2), () -> intakeRollers.runRollers(0)));
+                () -> intakeRollers.runRollers(-2.5), () -> intakeRollers.runRollers(0)));
   }
 
   public Command shootAmp() {
@@ -109,15 +108,15 @@ public class IntakeShooter {
   public Command angleShooterBasedOnDistance(double distance) {
     return shooterPivot.goToAngleCommand(Rotation2d.fromDegrees(lookupTable.get(distance)));
   }
-  
+
   public Command unjamNote() {
     return intakeRollers
         .unjamIntake()
         .deadlineWith(handoffRollers.outtakeCommand())
         .andThen(
             Commands.idle()
-                .until(intakePivot::isAtGoal)
-                .andThen(intakeRollers.outtakeCommand().withTimeout(kRollers.ejectIntakeTime)))
-        .deadlineWith(intakePivot.setIntakePosition(IntakePosition.EJECT));
+                .until(() -> intakePivot.isAtPosition(IntakePosition.EJECT))
+                .andThen(intakeRollers.eject())
+                .deadlineWith(intakePivot.setIntakePosition(IntakePosition.EJECT)));
   }
 }

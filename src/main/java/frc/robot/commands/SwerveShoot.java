@@ -51,16 +51,14 @@ public class SwerveShoot {
             .alongWith(
                 intakeShooter.angleShooterBasedOnDistance(
                     new Translation2d(swerve.getPose().getX(), swerve.getPose().getY())
-                        .getDistance(kSwerveShoot.blueSpeaker)))
-            ,
+                        .getDistance(kSwerveShoot.blueSpeaker))),
         swerve
             .teleopFocusPointCommand(
                 xTranslation, yTranslation, kSwerveShoot.redSpeaker, () -> false)
             .alongWith(
                 intakeShooter.angleShooterBasedOnDistance(
                     new Translation2d(swerve.getPose().getX(), swerve.getPose().getY())
-                        .getDistance(kSwerveShoot.redSpeaker)))
-            ,
+                        .getDistance(kSwerveShoot.redSpeaker))),
         () ->
             (DriverStation.getAlliance().isPresent()
                 && DriverStation.getAlliance().get() == Alliance.Blue));

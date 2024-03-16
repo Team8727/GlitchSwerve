@@ -82,10 +82,6 @@ public class SparkConfigurator {
     for (int i = 0; i < 7; i++) {
       for (int j = 0; j < Constants.configurationSetRetries; j++) {
         spark.setPeriodicFramePeriod(PeriodicFrame.values()[i], status[i]);
-        try {
-          Thread.sleep(5);
-        } catch (Exception e) {
-        }
       }
     }
 

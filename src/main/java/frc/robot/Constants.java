@@ -193,7 +193,7 @@ public class Constants {
 
       // Controls Constants
       public static class kDrive {
-        public static final double kP = 0.2;
+        public static final double kP = 0.25;
         public static final double kD = 0.05;
         public static final double kS = 0.068841;
         public static final double kV = 2.4568;
@@ -219,7 +219,7 @@ public class Constants {
       public static final int steerMaxCurrent = 35; // amps
 
       // Physical dimensions/values
-      public static final double wheelDiameter = Units.inchesToMeters(3);
+      public static final double wheelDiameter = 0.97 * Units.inchesToMeters(3);
       public static final double wheelCircumference = wheelDiameter * Math.PI; // meters
       public static final double driveMotorReduction = (45.0 * 22) / (drivePinionTeeth * 15);
       public static final double steerMotorReduction = 9424.0 / 203.0;
@@ -268,18 +268,18 @@ public class Constants {
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(
             new Translation3d(-0.29972, -0.1145794, 0.4792472),
-            new Rotation3d(0, 0.174533, Math.PI)); // TODO GET REAL ONE this is from last year
+            new Rotation3d(0, -0.174533, Math.PI)); // TODO GET REAL ONE this is from last year
     public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
             new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
 
     public static final Matrix<N3, N1> stateStdDevs =
-        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.05, 0.05, 0.01);
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.02, 0.02, 0.01);
     public static final Matrix<N3, N1> visionStdDevs =
-        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.1, 0.1, 0.4);
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.05, 0.05, 0.3);
     public static final double visionScalingFactor =
-        2; // scaling factor applied to the visionStdDevs per meter
+        4; // scaling factor applied to the visionStdDevs per meter
   }
 
   public static class kIntake {
@@ -319,7 +319,7 @@ public class Constants {
       public enum IntakePosition {
         HOME(Math.PI),
         DEPLOYED(0),
-        EJECT(Math.PI / 2);
+        EJECT(0.25 * Math.PI);
         public final double angle;
 
         private IntakePosition(double angle) {
@@ -344,7 +344,7 @@ public class Constants {
 
       // Outtake tunable parameters
       public static double outtakeVoltage = -2.7;
-      public static double ejectIntakeTime = 0.3;
+      public static double ejectIntakeTime = 0.4;
     }
   }
 
@@ -373,7 +373,7 @@ public class Constants {
 
       // Positions
       public enum ShooterPosition {
-        HARDSTOPS(Rotation2d.fromDegrees(122)),
+        HARDSTOPS(Rotation2d.fromDegrees(125)),
         HOME(Rotation2d.fromDegrees(125)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(200)),

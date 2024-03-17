@@ -268,7 +268,7 @@ public class Constants {
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(
             new Translation3d(-0.29972, -0.1145794, 0.4792472),
-            new Rotation3d(0, -0.174533, Math.PI)); // TODO GET REAL ONE this is from last year
+            new Rotation3d(0, -0.174533, Math.PI));
     public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
@@ -333,7 +333,7 @@ public class Constants {
       public static int rollerMotorID = 9;
       public static boolean invert = true;
       public static int sensorChannel = 6;
-      public static int currentLimit = 50;
+      public static int currentLimit = 40;
       public static double rampRate = 0.08;
 
       // Intake tunable parameters ----------

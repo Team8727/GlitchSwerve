@@ -50,6 +50,16 @@ public class HandoffRollers extends SubsystemBase implements Logged {
         .withTimeout(kHandoffRollers.shooterFeedTime);
   }
 
+  public Command intakeSource() {
+    return this.startEnd(
+            () -> setVoltage(kHandoffRollers.sourceIntakeVoltage),
+            () -> {
+              setVoltage(0);
+              hasPiece = true;
+            })
+        .withTimeout(kHandoffRollers.sourceIntakeFeedTime);
+  }
+
   public Command intakeCommand() {
     return this.startEnd(
             () -> setVoltage(kHandoffRollers.intakeVoltage),

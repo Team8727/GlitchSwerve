@@ -112,6 +112,7 @@ public class Robot extends TimedRobot implements Logged {
     oopsieWoopsieController
         .button(8)
         .onTrue(intakeRollers.intake().deadlineWith(handoffRollers.outtakeCommand()));
+    oopsieWoopsieController.button(9).whileTrue(intakeShooter.sourceIntake());
 
     driverController
         .x()

@@ -378,6 +378,7 @@ public class Constants {
         HOME(Rotation2d.fromDegrees(124)),
         CLIMB(Rotation2d.fromDegrees(240)),
         AMP(Rotation2d.fromDegrees(200)),
+        SOURCE(Rotation2d.fromDegrees(130)),
         ACTIVE_CONTROL;
         public final Rotation2d angle;
 
@@ -434,8 +435,10 @@ public class Constants {
     public static class kHandoffRollers {
       public static int canID = 15;
       public static double shooterFeedVoltage = 7;
+      public static double sourceIntakeVoltage = -3;
       public static double intakeVoltage = 7;
       public static double shooterFeedTime = 0.2;
+      public static double sourceIntakeFeedTime = 0.3;
       public static boolean inverted = false;
 
       // Sensors

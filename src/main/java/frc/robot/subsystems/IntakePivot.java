@@ -195,7 +195,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   public boolean isHome() {
-    return ((profiledPIDController.getGoal().position - getPivotAngle()) < 0.1)
+    return ((profiledPIDController.getGoal().position - getPivotAngle()) < 0.12)
         && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }
 

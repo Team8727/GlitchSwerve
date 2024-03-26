@@ -290,15 +290,15 @@ public class Constants {
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
-      public static double kP = 1.3;
+      public static double kP = 1.5;
       public static double kI = 0;
-      public static double kD = 0;
+      public static double kD = 0.03;
       // FF
       // public static double kS = 0.4273;
       public static double kS = 0.15;
-      public static double kG = 0.21;
+      public static double kG = 0.182;
       public static double kV = 1.13;
-      public static double kA = 0.04;
+      public static double kA = 0.048;
 
       // ProfiledPIDController
       public static double maxVel = 8;

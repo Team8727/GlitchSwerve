@@ -33,7 +33,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
   }
 
   public boolean getLowerSensor() {
-    return !lowerSensor.get();
+    return lowerSensor.get();
   }
 
   public boolean getUpperSensor() {

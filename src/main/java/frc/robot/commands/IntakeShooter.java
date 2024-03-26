@@ -121,14 +121,11 @@ public class IntakeShooter {
   }
 
   public Command sourceIntake() {
-    return shooterPivot
-        .goToPositionCommand(ShooterPosition.SOURCE)
-        .andThen(shooterFlywheels.otherShoot(-4))
-        .andThen(
-            Commands.run(() -> handoffRollers.setVoltage(-3))
-                .until(() -> handoffRollers.getLowerSensor()))
-        .andThen(Commands.idle().withTimeout(0.1))
-        .andThen(Commands.runOnce(() -> handoffRollers.setVoltage(0)))
-        .andThen(shooterPivot.goToPositionCommand(ShooterPosition.HOME));
+    return shooterFlywheels
+        .shootTest(-4)
+        .deadlineWith(
+            handoffRollers
+                .startEnd(() -> handoffRollers.setVoltage(-3), () -> handoffRollers.setVoltage(0))
+                .until(handoffRollers::getLowerSensor));
   }
 }

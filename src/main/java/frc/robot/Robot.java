@@ -108,11 +108,19 @@ public class Robot extends TimedRobot implements Logged {
     driverController.a().whileTrue(climber.climbDown(11));
     driverController.b().onTrue(intakeShooter.unjamNote());
 
-    oopsieWoopsieController.button(7).onTrue(intakeShooter.unjamNote());
+    oopsieWoopsieController.button(3).onTrue(intakeShooter.unjamNote());
     oopsieWoopsieController
-        .button(8)
+        .button(5)
         .onTrue(intakeRollers.intake().deadlineWith(handoffRollers.outtakeCommand()));
-    oopsieWoopsieController.button(9).whileTrue(intakeShooter.sourceIntake());
+    oopsieWoopsieController
+        .button(4)
+        .and(oopsieWoopsieController.button(1))
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  shooterFlywheels.removeDefaultCommand();
+                  shooterFlywheels.setDefaultCommand(intakeShooter.sourceIntake());
+                }));
 
     driverController
         .x()

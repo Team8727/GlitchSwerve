@@ -680,10 +680,10 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     } else {
       var direction =
           (type == SysIdType.LINEAR) ? Rotation2d.fromDegrees(45) : Rotation2d.fromDegrees(-45);
-      frontLeftModule.setTargetState(new SwerveModuleState(0, direction), false);
-      backLeftModule.setTargetState(new SwerveModuleState(0, direction), false);
-      frontRightModule.setTargetState(new SwerveModuleState(0, direction), false);
-      backRightModule.setTargetState(new SwerveModuleState(0, direction), false);
+      frontLeftModule.setTargetState(new SwerveModuleState(0, direction), false, false);
+      backLeftModule.setTargetState(new SwerveModuleState(0, direction), false, false);
+      frontRightModule.setTargetState(new SwerveModuleState(0, direction), false, false);
+      backRightModule.setTargetState(new SwerveModuleState(0, direction), false, false);
     }
 
     // apply the voltage
@@ -699,7 +699,7 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
       MutableMeasure<Voltage> appliedVoltage,
       MutableMeasure<Distance> distance,
       MutableMeasure<Velocity<Distance>> velocity) {
-    log.motor(module.toString())
+    log.motor(module.getFullPath())
         .voltage(appliedVoltage.mut_replace(module.getRawDriveNeoVoltage(), Volts))
         .linearPosition(distance.mut_replace(module.getPositon().distanceMeters, Meters))
         .linearVelocity(

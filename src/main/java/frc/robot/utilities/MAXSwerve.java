@@ -138,13 +138,21 @@ public class MAXSwerve implements Logged {
     return targetState.angle.minus(getCorrectedSteer());
   }
 
-  // Set the module's target state
   public void setTargetState(SwerveModuleState desiredState, boolean closedLoopDrive) {
+    setTargetState(desiredState, closedLoopDrive, true);
+  }
+
+  // Set the module's target state
+  public void setTargetState(
+      SwerveModuleState desiredState, boolean closedLoopDrive, boolean optimizeHeading) {
     // Optimize the state to prevent having to make a rotation of more than 90 degrees
-    SwerveModuleState optimizedState =
-        SwerveModuleState.optimize(
-            new SwerveModuleState(desiredState.speedMetersPerSecond, desiredState.angle),
-            getCorrectedSteer());
+    SwerveModuleState optimizedState = desiredState;
+    if (optimizeHeading) {
+      optimizedState =
+          SwerveModuleState.optimize(
+              new SwerveModuleState(desiredState.speedMetersPerSecond, desiredState.angle),
+              getCorrectedSteer());
+    }
 
     // Scale
     optimizedState.speedMetersPerSecond *= Math.cos(Math.abs(getHeadingError().getRadians()));

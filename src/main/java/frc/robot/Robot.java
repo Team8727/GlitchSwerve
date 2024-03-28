@@ -196,6 +196,7 @@ public class Robot extends TimedRobot implements Logged {
 
     DriverStation.startDataLog(DataLogManager.getLog());
     if (Robot.isSimulation()) DataLogManager.log("Simmode is " + Constants.simMode);
+    DataLogManager.log("Testing mode is " + Constants.testMode);
 
     // Start Monologue
     Monologue.setupMonologue(this, "system", Constants.logFileOnly, Constants.logLazy);

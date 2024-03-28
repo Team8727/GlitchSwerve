@@ -8,6 +8,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kIntake.kRollers;
 import frc.robot.utilities.SparkConfigurator.LogData;
@@ -79,13 +81,14 @@ public class IntakeRollers extends SubsystemBase implements Logged {
   }
 
   public Command intake() {
-    return this.startEnd(
-            () -> runRollers(kRollers.intakeVoltage),
-            () -> {
+    return this.runOnce(() -> runRollers(kRollers.intakeVoltage))
+        .andThen(Commands.idle(this))
+        .until(this::getPieceCheck)
+        .finallyDo(
+            (interrupted) -> {
               runRollers(0);
-              indexing = true;
-            })
-        .until(this::getPieceCheck);
+              if (!interrupted) indexing = true;
+            });
   }
 
   public Command index() {
@@ -96,7 +99,8 @@ public class IntakeRollers extends SubsystemBase implements Logged {
               runRollers(0);
               indexing = false;
               hasPiece = true;
-            });
+            })
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 
   public Command softIntakeFromAmp() {

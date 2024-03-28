@@ -40,6 +40,9 @@ public class Climber extends SubsystemBase {
   }
 
   //
+  public double getClimbEncoderRotations() {
+    return climbEncoder.getPosition();
+  }
 
   public boolean getIfCurrentLimit() {
     return (currentFilter.calculate(climbMotor.getOutputCurrent()) > kClimber.currentLimit);
@@ -55,5 +58,13 @@ public class Climber extends SubsystemBase {
     return run(() -> climbMotor.setVoltage(-velocity))
         .until(() -> climbEncoder.getPosition() <= 0)
         .finallyDo(() -> climbMotor.setVoltage(0));
+  }
+
+  public Command moveUp(double voltage) {
+    return run(() -> climbMotor.setVoltage(voltage));
+  }
+
+  public Command moveDown(double voltage) {
+    return run(() -> climbMotor.setVoltage(voltage));
   }
 }

@@ -8,12 +8,17 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkBase.IdleMode;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI.Port;
 
@@ -37,6 +42,12 @@ public class Constants {
     DESKTOP
   }
 
+  public enum TestMode {
+    NONE,
+    SYSID,
+    NO_BRAKE_MODE
+  }
+
   // SysId
   public static enum sysIdType {
     LINEAR,
@@ -52,8 +63,23 @@ public class Constants {
     CLIMBER
   }
 
+  public static class kSwerveShoot {
+    public static Translation2d blueAmp =
+        new Translation2d(1.8515, 8.2042); // Exact field-relative position
+    public static Translation2d redAmp =
+        new Translation2d(14.700758, 8.2042); // Exact field-relative position
+    public static Rotation2d rotationAmpShot = new Rotation2d(-Math.PI / 2);
+
+    public static Translation2d blueSpeaker = new Translation2d(-0.0381, 5.547868);
+    public static Translation2d redSpeaker = new Translation2d(16.579342, 5.547868);
+
+    // TODO tune this below:
+    public static Translation2d chassisOffset =
+        new Translation2d(0, 0.4); // Should be about half the distance of the chassis
+  }
+
   public static class kClimber {
-    public static int climberID = 15;
+    public static int climberID = 18;
 
     // feedForward constants below. This is used in initializing feedForward objects: [Object Name]
     // = SimpleMotorFeedforward(kS, kV, kA);
@@ -72,13 +98,23 @@ public class Constants {
     public static final double timeConstant = 0;
     public static final double period = 0.02;
 
-    public static final double rotationsToClimb = 0;
+    public static final double rotationsToClimb = 135;
   }
 
-  public enum TestMode {
-    NONE,
-    SYSID,
-    NO_BRAKE_MODE
+  public static class kIntakeShooter {
+    public static class kShootSpeaker {
+      public static double shootVoltage = 11;
+      public static double delay = 0.5;
+    }
+
+    public static class kHandOff {
+      public static double timeout = 0.75;
+    }
+
+    public static class kShootAmp {
+      public static double shootVoltage = 5;
+      public static double delay = 0.25;
+    }
   }
 
   // Swerve subsystem constants (module constants included)
@@ -91,12 +127,12 @@ public class Constants {
     public static double maxTransSpeed = 5;
     public static double maxAngSpeed = 3 * Math.PI;
 
-    public static double maxTransAccel = 1.25 * 9.81;
+    public static double maxTransAccel = 1.4 * 9.81;
     public static double maxAngAccel = 10 * 2 * Math.PI;
 
     // Operator interface constants
     public static class Teleop {
-      public static double translationGain = 0.85;
+      public static double translationGain = 1;
       public static double rotationGain = 0.7;
 
       public static boolean closedLoop = false;
@@ -133,9 +169,14 @@ public class Constants {
       public static final double maxAngAccel = 0.75 * kSwerve.maxAngAccel;
       public static final double maxAngVel = 0.75 * kSwerve.maxAngSpeed;
 
+      public static final double transP = 12;
+
+      public static final double maxOnTheFlyVel = 3;
+      public static final double maxOnTheFlyAcc = 3;
+
       public static final HolonomicPathFollowerConfig pathFollowConfig =
           new HolonomicPathFollowerConfig(
-              new PIDConstants(12, 0.0, 0), // Translation PID constants
+              new PIDConstants(Auton.transP, 0.0, 0), // Translation PID constants
               new PIDConstants(angP, 0.0, angD), // Rotation PID constants
               kModule.maxWheelSpeed, // Max module speed, in m/s
               Math.pow(
@@ -152,7 +193,7 @@ public class Constants {
 
       // Controls Constants
       public static class kDrive {
-        public static final double kP = 0.2;
+        public static final double kP = 0.25;
         public static final double kD = 0.05;
         public static final double kS = 0.068841;
         public static final double kV = 2.4568;
@@ -178,7 +219,7 @@ public class Constants {
       public static final int steerMaxCurrent = 35; // amps
 
       // Physical dimensions/values
-      public static final double wheelDiameter = Units.inchesToMeters(3);
+      public static final double wheelDiameter = 0.97 * Units.inchesToMeters(3);
       public static final double wheelCircumference = wheelDiameter * Math.PI; // meters
       public static final double driveMotorReduction = (45.0 * 22) / (drivePinionTeeth * 15);
       public static final double steerMotorReduction = 9424.0 / 203.0;
@@ -226,12 +267,20 @@ public class Constants {
     // Vision
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(
-            new Translation3d(0.243, 0.193, 0.229),
-            new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
+            new Translation3d(-0.29972, -0.1145794, 0.4792472),
+            new Rotation3d(0, -0.174533, Math.PI));
     public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
             new Rotation3d(0, 0, 0)); // TODO GET REAL ONE this is from last year
+
+    public static final Matrix<N3, N1> stateStdDevs =
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.02, 0.02, 0.01);
+    public static final Matrix<N3, N1> visionStdDevs =
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.03, 0.03, 0.25);
+    public static final double visionScalingFactor =
+        3; // scaling factor applied to the visionStdDevs per meter bigger means trust less at a
+    // distance
   }
 
   public static class kIntake {
@@ -241,92 +290,117 @@ public class Constants {
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
       // PID
-      public static double kP = 4;
+      public static double kP = 1.5;
       public static double kI = 0;
-      public static double kD = 0.015;
+      public static double kD = 0.03;
       // FF
       // public static double kS = 0.4273;
       public static double kS = 0.15;
-      public static double kG = 0.23;
-      public static double kV = 1.1;
-      public static double kA = 0.24565;
+      public static double kG = 0.182;
+      public static double kV = 1.13;
+      public static double kA = 0.048;
 
       // ProfiledPIDController
       public static double maxVel = 8;
-      public static double maxAccel = 40;
+      public static double maxAccel = 37;
 
       // Encoder
       public static int portA = 3;
       public static int portB = 2;
       public static double pulsesPerRevolution = 2048;
-      public static Rotation2d cogOffset = new Rotation2d(Math.PI);
-      public static boolean invertedEncoder = false;
+      public static final double encoderOffset = Math.PI; // TUNE THIS
+      public static final double cogOffset = -0.4;
+      public static boolean invertedEncoder = true;
+      public static int gearRatio = 2;
 
       public static final double resetProfiledPIDControllerPos = 0;
-      public static final Rotation2d intakeRadiansDown = new Rotation2d(0);
-      public static final Rotation2d intakeRadiansHome = new Rotation2d(Math.PI);
+      public static final double intakeRadiansDown = 0;
+      public static final double intakeRadiansHome = Math.PI;
+
+      public enum IntakePosition {
+        HOME(Math.PI),
+        DEPLOYED(0),
+        EJECT(0.25 * Math.PI);
+        public final double angle;
+
+        private IntakePosition(double angle) {
+          this.angle = angle;
+        }
+      }
     }
 
     public static class kRollers {
       public static int rollerMotorID = 9;
-      public static int sensorChannel = 0; // TODO get real channel
-      public static double intakeVoltage = 1; // TODO Tune
-      public static double outtakeVoltage = -1; // TODO tune
-      public static double delayForOuttake = 1;
+      public static boolean invert = true;
+      public static int sensorChannel = 6;
+      public static int currentLimit = 40;
+      public static double rampRate = 0.08;
+
+      // Intake tunable parameters ----------
+      // Intake Command
+      public static double intakeVoltage = 11;
+      public static double softIntakeFromAmpVoltage = 3;
+      public static double intakeTime = 0.25;
+      public static double intakeDeployWait = 0.3;
+
+      // Outtake tunable parameters
+      public static double outtakeVoltage = -2.7;
+      public static double ejectIntakeTime = 0.4;
     }
   }
 
   public static class kShooter {
     public static class kPivot {
-      public static int pivot1MotorID = 11;
-      public static int pivot2MotorID = 12;
+      public static final int pivotLeaderID = 11;
+      public static final int pivotFollowerID = 12;
+      public static final boolean invertMotors = false;
 
       // PD
-      public static double kP = 0; // TODO get Real
-      public static double kI = 0; // TODO get Real
-      public static double kD = 0; // TODO get Real
+      public static double kP = 1.5;
+      public static double kI = 0;
+      public static double kD = 0;
       public static double minPIDOutput = -1.0;
       public static double maxPIDOutput = 1.0;
 
       public static double period = 0.02;
 
       // Encoder
-      public static final int encoderChannelA = 5;
-      public static final int encoderChannelB = 6;
-      public static final boolean invertEncoder = false;
+      public static final int encoderChannelA = 0;
+      public static final int encoderChannelB = 1;
+      public static final boolean invertEncoder = true;
       public static final double gearRatio = 2;
-      public static final double distancePerPulse = (2 * Math.PI) * gearRatio / 2048; // radians
-      public static final Rotation2d cogOffset = Rotation2d.fromRadians(0); // TODO find this value
+      public static final double distancePerPulse = (2 * Math.PI) / gearRatio / 2048; // radians
+      public static final Rotation2d cogOffset = Rotation2d.fromRadians(0.369);
 
       // Positions
-      public enum Position {
-        DOWN(Rotation2d.fromDegrees(0)),
-        CLIMB(Rotation2d.fromDegrees(0)),
-        AMP(Rotation2d.fromDegrees(0));
-
+      public enum ShooterPosition {
+        HARDSTOPS(Rotation2d.fromDegrees(124)),
+        HOME(Rotation2d.fromDegrees(124)),
+        CLIMB(Rotation2d.fromDegrees(240)),
+        AMP(Rotation2d.fromDegrees(200)),
+        SOURCE(Rotation2d.fromDegrees(130)),
+        ACTIVE_CONTROL;
         public final Rotation2d angle;
 
-        private Position(Rotation2d angle) {
+        private ShooterPosition(Rotation2d angle) {
           this.angle = angle;
+        }
+
+        private ShooterPosition() {
+          this.angle = null;
         }
       }
 
+      public static final Rotation2d atGoalDeadzone = Rotation2d.fromDegrees(10);
+
       // FF
-      public static double kS = 0; // TODO GET REAL
-      public static double kG = 0; // TODO get Real
-      public static double kV = 0; // TODO get Real
-      public static double kA = 0; // TODO get real
+      public static double kS = 0.16;
+      public static double kG = -0.3;
+      public static double kV = 1.4;
+      public static double kA = 0.0;
 
-      // Encoder
-      public static int portA = 0;
-      public static int portB = 1;
-      public static double pulsesPerRevolution = 2048;
-      public static final double resetProfiledPIDControllerPos = 0;
-
-      public static double maxVel = 0;
-      public static double maxAccel = 0;
-
-      public static double homeRad = 0; // TODO get real radians
+      public static double maxVel = 6;
+      public static double maxAccel = 15;
     }
 
     public static class kFlywheels {
@@ -361,9 +435,22 @@ public class Constants {
     public static class kHandoffRollers {
       public static int canID = 15;
       public static double shooterFeedVoltage = 7;
+      public static double sourceIntakeVoltage = -3;
+      public static double intakeVoltage = 7;
       public static double shooterFeedTime = 0.2;
+      public static double sourceIntakeFeedTime = 0.3;
       public static boolean inverted = false;
-      public static int sensorChannel = 1; // TODO GET REAL ONE
+
+      // Sensors
+      public static int upperSensorPort = 4;
+      public static int lowerSensorPort = 5;
     }
+  }
+
+  public static class kIndications {
+    public static final int ledPort = 0;
+    public static final int leftStripLength = 23;
+    public static final int rightStripLength = 23;
+    public static final boolean invertDirection = false;
   }
 }

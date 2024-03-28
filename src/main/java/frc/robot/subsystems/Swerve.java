@@ -12,6 +12,7 @@ import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.GeometryUtil;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -20,12 +21,14 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
@@ -37,6 +40,7 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
@@ -129,8 +133,20 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   private AprilTagFieldLayout fieldLayout;
   private PhotonPoseEstimator photonPoseEstimator1;
   private PhotonPoseEstimator photonPoseEstimator2;
+  @Log.NT private Pose3d photonPose = new Pose3d();
+
+  private boolean visionEnable = false;
+
+  // Path following
+  private ProfiledPIDController xController;
+  private ProfiledPIDController yController;
+  private ProfiledPIDController rotController;
+  private TrapezoidProfile.Constraints pathFollowConstraints =
+      new Constraints(Auton.maxOnTheFlyVel, Auton.maxOnTheFlyAcc);
+  private ChassisSpeeds pathChassisSpeeds;
 
   public Swerve() {
+    Shuffleboard.getTab("Swerve").add(this);
     // Setup controls objects
     limiter = new ChassisLimiter(kSwerve.maxTransAccel, kSwerve.maxAngAccel);
     poseEstimator =
@@ -143,7 +159,9 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
               backRightModule.getPositon(),
               frontRightModule.getPositon()
             },
-            new Pose2d(4, 4, new Rotation2d()));
+            new Pose2d(0, 0, new Rotation2d()),
+            kSwerve.stateStdDevs,
+            kSwerve.visionStdDevs);
 
     // Vision
     try {
@@ -158,16 +176,24 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera1,
             kSwerve.aprilTagCamera1PositionTransform);
+    photonPoseEstimator1.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     photonPoseEstimator2 =
         new PhotonPoseEstimator(
             fieldLayout,
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera2,
-            kSwerve.aprilTagCamera1PositionTransform);
+            kSwerve.aprilTagCamera2PositionTransform);
+    photonPoseEstimator1.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
     // Bind Path Follower command logging methods
     PathPlannerLogging.setLogActivePathCallback(autonPath::setPoses);
     PathPlannerLogging.setLogTargetPoseCallback(autonRobot::setPose);
+
+    // Path Follower Profiles
+    xController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    yController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    rotController = new ProfiledPIDController(Auton.angP, 0, 0, pathFollowConstraints);
+    rotController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   // ---------- Drive Commands ----------
@@ -274,12 +300,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
   // ---------- Autonomous Commands ----------
 
   // Follow a PathPlanner path
-  public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
+  public Command followPathCommand(PathPlannerPath path, boolean useAlliance, boolean resetPose) {
     return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
         .andThen(
-            () ->
-                setPose(
-                    path.getPreviewStartingHolonomicPose())) // TODO remove this when we get vision
+            () -> {
+              if (resetPose) resetPose(path, useAlliance);
+            })
         // working
         .andThen(
             new FollowPathHolonomic(
@@ -299,12 +325,8 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
         .withName("followPathCommand");
   }
 
-  // Follow a PathPlanner path and trigger commands passed in the event map at event markers
-  public Command followPathWithEventsCommand(PathPlannerPath path) {
-    return this.runOnce(() -> swerveState.mode = SwerveState.Mode.AUTO_DRIVE)
-        .andThen(followPathCommand(path, false))
-        .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
-        .withName("followPathWithEventsCommand");
+  public Command followPathCommand(PathPlannerPath path, boolean useAlliance) {
+    return followPathCommand(path, useAlliance, false);
   }
 
   // Generate an on-the-fly path to reach a certain pose
@@ -330,6 +352,51 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
                         false)))
         .finallyDo(() -> swerveState.mode = SwerveState.Mode.IDLE)
         .withName("driveToPoint");
+  }
+
+  public Command driveToPointProfiles(Pose2d goal) {
+    return this.runOnce(
+            () -> {
+              // Reset Profiles
+              ChassisSpeeds speeds =
+                  ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getHeading());
+              xController.reset(getPose().getX(), speeds.vxMetersPerSecond);
+              yController.reset(getPose().getY(), speeds.vyMetersPerSecond);
+              rotController.reset(
+                  getPose().getRotation().getRadians(), speeds.omegaRadiansPerSecond);
+
+              // Set Goals
+              xController.setGoal(goal.getX());
+              yController.setGoal(goal.getY());
+              rotController.setGoal(goal.getRotation().getRadians());
+            })
+        .andThen(
+            this.run(
+                () -> {
+                  // Calculate Feedback
+                  double xFB = xController.calculate(getPose().getX());
+                  double yFB = yController.calculate(getPose().getY());
+
+                  double rotFB = rotController.calculate(getPose().getRotation().getRadians());
+
+                  // Calculate full chassis Speeds
+                  pathChassisSpeeds =
+                      new ChassisSpeeds(
+                          xFB + xController.getSetpoint().velocity,
+                          yFB + yController.getSetpoint().velocity,
+                          rotFB + rotController.getSetpoint().velocity);
+                  this.log("xControllerSetpoint", xController.getSetpoint().position);
+                  this.log("yControllerSetpoint", yController.getSetpoint().position);
+                  this.log("rotController", rotController.getSetpoint().position);
+                  this.log("xSetVel", xController.getSetpoint().velocity);
+                  this.log("ySetVel", yController.getSetpoint().velocity);
+                  this.log("rotSetVel", rotController.getSetpoint().velocity);
+                  this.log("xFB", xFB);
+                  this.log("yFB", yFB);
+                  this.log("rotFB", rotFB);
+                  drive(
+                      ChassisSpeeds.fromFieldRelativeSpeeds(pathChassisSpeeds, getHeading()), true);
+                }));
   }
 
   // ---------- Other commands ----------
@@ -437,19 +504,26 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     return kSwerve.kinematics.toChassisSpeeds(getModuleStates());
   }
 
+  @Log.NT
+  public boolean getVisionEnable() {
+    return visionEnable;
+  }
+
+  public void setVisionEnable(boolean bool) {
+    visionEnable = bool;
+  }
   // AddVisionMeasurement With Two camera streams
   public void updatePoseWithCameraData() {
     if (camera1.isConnected()) {
-      var cam1Result = camera1.getLatestResult();
-      if (cam1Result.getMultiTagResult().estimatedPose.isPresent) { // checks the pose exists
-        double poseAmbiguity = cam1Result.getBestTarget().getPoseAmbiguity();
-        if (poseAmbiguity < 0.2
-            && poseAmbiguity >= 0) { // check if the ambiguity is in the correct bounds
-          Optional<EstimatedRobotPose> estimatedGlobalPoseVision = photonPoseEstimator1.update();
-          poseEstimator.addVisionMeasurement(
-              estimatedGlobalPoseVision.get().estimatedPose.toPose2d(),
-              estimatedGlobalPoseVision.get().timestampSeconds);
-        }
+      var result = camera1.getLatestResult();
+      Optional<EstimatedRobotPose> estimatedGlobalPose = photonPoseEstimator1.update(result);
+      if (estimatedGlobalPose.isPresent()) {
+        double distance = result.getBestTarget().getBestCameraToTarget().getTranslation().getNorm();
+        poseEstimator.addVisionMeasurement(
+            estimatedGlobalPose.get().estimatedPose.toPose2d(),
+            estimatedGlobalPose.get().timestampSeconds,
+            kSwerve.visionStdDevs.times(distance * kSwerve.visionScalingFactor));
+        photonPose = estimatedGlobalPose.get().estimatedPose;
       }
     }
     if (camera2.isConnected()) {
@@ -544,7 +618,9 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
           simNavXYaw.get()
               + chassisVelocityTarget.omegaRadiansPerSecond * -360 / (2 * Math.PI) * 0.02);
     poseEstimator.update(getGyroRaw(), getPositions());
-    updatePoseWithCameraData();
+    if (DriverStation.isTeleop()) {
+      updatePoseWithCameraData();
+    }
     field2d.setRobotPose(getPose());
   }
 
@@ -566,6 +642,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     // Create a velocity vector (full speed is a unit vector)
     var translationVelocity = VecBuilder.fill(xTranslation, yTranslation);
 
+    // If we're red alliance invert translation directions because driver is rotated 180 degrees
+    // from the blue origin reference
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Red)
+      translationVelocity = translationVelocity.times(-1);
+
     // Multiply velocity vector by max speed
     translationVelocity = translationVelocity.times(kSwerve.maxTransSpeed);
 
@@ -576,6 +658,16 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     // Construct chassis speeds and return
     return new ChassisSpeeds(
         translationVelocity.get(0, 0), translationVelocity.get(1, 0), zRotation);
+  }
+
+  private void resetPose(PathPlannerPath path, boolean useAlliance) {
+    var trajectory = path.getTrajectory(new ChassisSpeeds(), new Rotation2d());
+    var initialPose = trajectory.getInitialTargetHolonomicPose();
+    if (useAlliance
+        && DriverStation.getAlliance().isPresent()
+        && DriverStation.getAlliance().get() == Alliance.Red) {
+      setPose(GeometryUtil.flipFieldPose(initialPose));
+    } else setPose(initialPose);
   }
 
   private void setStateSysId(Measure<Voltage> volts, SysIdType type) {

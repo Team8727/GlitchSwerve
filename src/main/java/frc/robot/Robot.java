@@ -13,12 +13,20 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.SimMode;
+import frc.robot.Constants.kIntake.kPivot.IntakePosition;
+import frc.robot.Constants.kShooter.kPivot.ShooterPosition;
 import frc.robot.commands.AutoRoutines;
+import frc.robot.commands.ClimberFactory;
+import frc.robot.commands.IntakeShooter;
+import frc.robot.commands.SwerveShoot;
 import frc.robot.commands.SysIdRoutines;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.HandoffRollers;
+import frc.robot.subsystems.Indications;
 import frc.robot.subsystems.IntakePivot;
 import frc.robot.subsystems.IntakeRollers;
 import frc.robot.subsystems.ShooterFlywheels;
@@ -34,6 +42,7 @@ import monologue.Monologue;
 
 public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
+  private CommandJoystick oopsieWoopsieController = new CommandJoystick(1);
 
   // Subsystems
   private Swerve swerve = new Swerve();
@@ -42,9 +51,28 @@ public class Robot extends TimedRobot implements Logged {
   private ShooterFlywheels shooterFlywheels = new ShooterFlywheels();
   private ShooterPivot shooterPivot = new ShooterPivot();
   private HandoffRollers handoffRollers = new HandoffRollers();
+  private Climber climber = new Climber();
+
+  @SuppressWarnings("unused")
+  private Indications indications =
+      new Indications(
+          swerve,
+          intakePivot,
+          shooterPivot,
+          intakeRollers,
+          handoffRollers,
+          shooterFlywheels,
+          driverController);
+
+  // Factories
+  private IntakeShooter intakeShooter =
+      new IntakeShooter(handoffRollers, intakePivot, intakeRollers, shooterFlywheels, shooterPivot);
+  private ClimberFactory climberFactory = new ClimberFactory(climber, shooterPivot);
+  private SwerveShoot swerveShoot = new SwerveShoot(swerve, intakeShooter);
 
   // Auto Objects
-  private AutoRoutines autos = new AutoRoutines(swerve);
+  private AutoRoutines autos =
+      new AutoRoutines(swerve, shooterFlywheels, shooterPivot, intakeShooter, intakePivot);
   private Command autoCommand;
   private SysIdRoutines sysIdRoutines;
 
@@ -56,29 +84,70 @@ public class Robot extends TimedRobot implements Logged {
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX(),
-            driverController.getHID()::getLeftBumper));
+            () -> false));
 
     // Sets the default position to be home
-    intakePivot.setDefaultCommand(intakePivot.setIntakeDown(false));
-    shooterPivot.setDefaultCommand(shooterPivot.setShooterHome());
+    intakePivot.setDefaultCommand(intakePivot.setIntakePosition(IntakePosition.HOME));
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.start().toggleOnTrue(swerve.xSwerveCommand());
+    driverController
+        .rightBumper()
+        .onTrue(
+            Commands.either(
+                intakeShooter.shootSpeaker(),
+                intakeShooter.shootAmp(),
+                () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
+
+    driverController
+        .leftBumper()
+        .and(() -> !intakeRollers.hasPiece() && !handoffRollers.hasPiece())
+        .whileTrue(intakeShooter.intakeProcess());
+
+    driverController.y().onTrue(climberFactory.goUpFully());
+    driverController.a().whileTrue(climber.climbDown(11));
+    driverController.b().onTrue(intakeShooter.unjamNote());
+
+    oopsieWoopsieController.button(3).onTrue(intakeShooter.unjamNote());
+    oopsieWoopsieController
+        .button(5)
+        .onTrue(intakeRollers.intake().deadlineWith(handoffRollers.outtakeCommand()));
+    oopsieWoopsieController
+        .button(4)
+        .and(oopsieWoopsieController.button(1))
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  shooterFlywheels.removeDefaultCommand();
+                  shooterFlywheels.setDefaultCommand(intakeShooter.sourceIntake());
+                }));
+
+    driverController
+        .x()
+        .onTrue(
+            Commands.either(
+                shooterPivot.goToPositionCommand(ShooterPosition.CLIMB),
+                climberFactory.ShooterPivotToHome(),
+                () -> shooterPivot.getGoalPosition() != ShooterPosition.CLIMB));
+
+    driverController
+        .leftTrigger()
+        .and(driverController.rightTrigger())
+        .and(() -> shooterPivot.getGoalPosition() == ShooterPosition.HOME)
+        .and(() -> handoffRollers.hasPiece())
+        .onTrue(intakeShooter.pivotAmp());
   }
 
   private void configureCommands() {
-    new Trigger(intakeRollers::getPieceCheck)
-        .and(() -> !shooterFlywheels.getPieceCheck())
-        .whileTrue(intakeRollers.outtakeCommand().until(() -> shooterFlywheels.getPieceCheck()));
-    driverController
-        .a()
-        .onTrue(
-            Commands.print("What the fuck")
-                .andThen(
-                    shooterFlywheels
-                        .shootTest(10)
-                        .raceWith(
-                            Commands.waitSeconds(1).andThen(handoffRollers.feedShooterCommand()))));
+    new Trigger(intakeRollers::hasPiece)
+        .and(() -> !handoffRollers.hasPiece())
+        .and(intakePivot::isHome)
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(intakeShooter.handOff());
+
+    new Trigger(intakeRollers::isIndexing)
+        .and(DriverStation::isTeleopEnabled)
+        .onTrue(intakeRollers.index());
   }
 
   // Bind commands to triggers
@@ -93,6 +162,10 @@ public class Robot extends TimedRobot implements Logged {
 
     driverController.rightStick().onTrue(swerve.zeroGyroCommand());
     driverController.a().whileTrue(Commands.deferredProxy(sysIdRoutines::getCommand));
+  }
+
+  private void disableBrakeMode() {
+    shooterPivot.setBrakeModeCommand(false).schedule();
   }
 
   @Override
@@ -135,6 +208,8 @@ public class Robot extends TimedRobot implements Logged {
       configureSysIdBindings();
     }
 
+    if (Constants.testMode == Constants.TestMode.NO_BRAKE_MODE) disableBrakeMode();
+
     // Configure automated commands
     configureCommands();
 
@@ -161,6 +236,7 @@ public class Robot extends TimedRobot implements Logged {
 
   @Override
   public void autonomousInit() {
+    intakePivot.reset();
     autoCommand.schedule();
   }
 
@@ -173,7 +249,13 @@ public class Robot extends TimedRobot implements Logged {
   }
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    shooterFlywheels.setDefaultCommand(
+        Commands.either(
+            shooterFlywheels.otherShoot(4),
+            shooterFlywheels.otherShoot(0),
+            () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
+  }
 
   @Override
   public void teleopPeriodic() {}

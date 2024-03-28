@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.utilities.SparkConfigurator.*;
 import static frc.robot.utilities.SparkConfigurator.getSparkMax;
 
 import com.revrobotics.CANSparkBase;
@@ -14,7 +13,6 @@ import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Angle;
@@ -29,8 +27,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.kIntake.kPivot;
+import frc.robot.Constants.kIntake.kPivot.IntakePosition;
 import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.Characterizable;
+import frc.robot.utilities.SparkConfigurator.LogData;
 import frc.robot.utilities.SparkConfigurator.Sensors;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -41,13 +41,15 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
   private final CANSparkMax pivotMotor;
   private final Encoder pivotEncoder;
-  private Rotation2d encoderOffset;
 
   // Controls
   private final ArmFeedforward pivotFF;
   private final ProfiledPIDController profiledPIDController;
   private final TrapezoidProfile.Constraints constraints =
       new Constraints(kPivot.maxVel, kPivot.maxAccel);
+  private final TrapezoidProfile.State goal;
+  private final TrapezoidProfile.State currentSetpoint;
+  private IntakePosition goalPosition = IntakePosition.HOME;
 
   // Shuffleboard
   private ShuffleboardTab tab = Shuffleboard.getTab("Active Configs");
@@ -62,47 +64,44 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
             Set.of(Sensors.ABSOLUTE),
             Set.of(LogData.POSITION, LogData.VELOCITY, LogData.VOLTAGE));
     pivotMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
+    pivotMotor.burnFlash();
 
     // Encoder Configs
     pivotEncoder = new Encoder(kPivot.portA, kPivot.portB);
     pivotEncoder.setReverseDirection(kPivot.invertedEncoder);
     resetEncoder();
-    resetEncoderOffset(kPivot.intakeRadiansHome);
 
     // Feedforward Configs
     pivotFF = new ArmFeedforward(kPivot.kS, kPivot.kG, kPivot.kV, kPivot.kA);
 
-    pivotEncoder.setDistancePerPulse(2 * Math.PI / kPivot.pulsesPerRevolution);
+    pivotEncoder.setDistancePerPulse(2 * Math.PI / (kPivot.pulsesPerRevolution * kPivot.gearRatio));
     pivotEncoder.reset();
 
     profiledPIDController = new ProfiledPIDController(kPivot.kP, kPivot.kI, kPivot.kD, constraints);
-    profiledPIDController.reset(getPhysAngle());
+    profiledPIDController.reset(getPivotAngle());
+    goal = new TrapezoidProfile.State(kPivot.intakeRadiansHome, 0);
+    profiledPIDController.setGoal(goal);
+    currentSetpoint = profiledPIDController.getSetpoint();
     profiledPIDController.disableContinuousInput();
 
     // Button to Reset Encoder
     tab.add("Reset Intake Pivot Encoder", resetEncoder());
+    tab.add("PID", profiledPIDController);
+    tab.addString("Intake Position", () -> goalPosition.name());
   }
 
-  @Log.NT
-  public double getPhysAngle() {
-    return Math.PI - pivotEncoder.getDistance();
+  // MAIN CONTROLS -------------------------------
+  public Command setIntakePosition(IntakePosition intakePosition) {
+    return this.runOnce(() -> goalPosition = intakePosition)
+        .andThen(setIntakePivotPos(intakePosition.angle));
   }
 
-  // MAIN CONTROLS
-  public Command setIntakeDown(boolean setDown) {
-    return setDown
-        ? setIntakePivotPos(kPivot.intakeRadiansDown)
-        : setIntakePivotPos(kPivot.intakeRadiansHome);
-  }
-
-  public Command setIntakePivotPos(Rotation2d posRad) {
-    return this.runOnce(this::resetProfile)
-        .andThen(
-            this.run(
-                    () -> {
-                      pivotMotor.setVoltage(calculateVoltage(posRad));
-                    })
-                .finallyDo(() -> pivotMotor.setVoltage(0)));
+  public Command setIntakePivotPos(double posRad) {
+    return this.run(
+            () -> {
+              pivotMotor.setVoltage(calculateVoltage(posRad));
+            })
+        .finallyDo(() -> pivotMotor.setVoltage(0));
   }
 
   public Command setVoltageTest(DoubleSupplier volts) {
@@ -111,14 +110,13 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   }
 
   // ---------- Public interface methods ----------
-
-  public void resetProfile() {
-    profiledPIDController.reset(getPivotAngle().getRadians(), getPivotVelocity());
+  @Log.NT
+  public double getPivotAngle() {
+    return getRawEncoder() + kPivot.encoderOffset;
   }
 
-  @Log.NT
-  public Rotation2d getPivotAngle() {
-    return getRawEncoder().plus(encoderOffset);
+  public void reset() {
+    profiledPIDController.reset(getPivotAngle(), 0);
   }
 
   @Log.NT
@@ -131,6 +129,11 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     return pivotMotor.getAppliedOutput() * pivotMotor.getBusVoltage();
   }
 
+  @Log.NT
+  public double getCurrent() {
+    return pivotMotor.getOutputCurrent();
+  }
+
   public void setBrakeMode(boolean on) {
     if (on) {
       pivotMotor.setIdleMode(IdleMode.kBrake);
@@ -139,39 +142,75 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     }
   }
 
-  public double calculateVoltage(Rotation2d angle) {
+  @Log.NT
+  public double getSetpointAngle() {
+    return currentSetpoint.position;
+  }
+
+  @Log.NT
+  public double getSetpointVelocity() {
+    return currentSetpoint.velocity;
+  }
+
+  @Log.NT
+  public double getGoalAngle() {
+    return profiledPIDController.getGoal().position;
+  }
+
+  @Log.NT
+  public double getGoalVelocity() {
+    return profiledPIDController.getGoal().velocity;
+  }
+
+  public IntakePosition getGoalPosition() {
+    return this.goalPosition;
+  }
+
+  private double calculateVoltage(double angle) {
     // Set appropriate goal
-    profiledPIDController.setGoal(angle.getRadians());
+    profiledPIDController.setGoal(angle);
 
     // Get setpoint from profile
-    var profileSetpoint = profiledPIDController.getSetpoint();
+    var nextSetpoint = profiledPIDController.getSetpoint();
+
+    var accel = (nextSetpoint.velocity - currentSetpoint.velocity) / 0.02;
+
+    log("Accel", accel);
+    log("Next setpoint velocity", nextSetpoint.velocity);
+    log("Current Setpoint velocity", currentSetpoint.velocity);
 
     // Calculate voltages
     double feedForwardVoltage =
-        pivotFF.calculate(
-            profileSetpoint.position + kPivot.cogOffset.getRadians(), profileSetpoint.velocity);
-    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle().getRadians());
+        pivotFF.calculate(nextSetpoint.position + kPivot.cogOffset, nextSetpoint.velocity, accel);
+    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle());
 
     // Log Values
     this.log("FeedbackVoltage", feedbackVoltage);
-    this.log("FeedForwardPosition", profileSetpoint.position);
-    this.log("FeedForwardVelocity", profileSetpoint.velocity);
+    this.log("Feedforward voltage", feedForwardVoltage);
+
+    currentSetpoint.position = nextSetpoint.position;
+    currentSetpoint.velocity = nextSetpoint.velocity;
 
     return feedForwardVoltage + feedbackVoltage;
   }
 
-  // Private hardware
-  private Rotation2d getRawEncoder() {
-    return Rotation2d.fromRadians(pivotEncoder.getDistance());
+  public boolean isHome() {
+    return ((profiledPIDController.getGoal().position - getPivotAngle()) < 0.12)
+        && (profiledPIDController.getGoal().position == kPivot.intakeRadiansHome);
   }
 
-  private void resetEncoderOffset(Rotation2d angle) {
-    encoderOffset = angle.minus(getRawEncoder());
+  public boolean isAtPosition(IntakePosition position) {
+    return position.angle == getSetpointAngle();
+  }
+
+  // Private hardware
+  private double getRawEncoder() {
+    return pivotEncoder.getDistance();
   }
 
   // Reset Encoder
   public Command resetEncoder() {
-    return this.runOnce(() -> pivotEncoder.reset());
+    return this.runOnce(() -> pivotEncoder.reset()).ignoringDisable(true);
   }
 
   // Return SysId Routine

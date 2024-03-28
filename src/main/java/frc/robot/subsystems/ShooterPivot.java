@@ -122,7 +122,14 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
 
   public Command trackAngleCommand(Supplier<Rotation2d> angleSupplier) {
     return this.runOnce(this::resetProfile)
-        .andThen(this.run(() -> pivotLeader.setVoltage(calculateVoltage(angleSupplier.get()))))
+        .andThen(
+            this.run(
+                () -> {
+                  goal.position = angleSupplier.get().getRadians();
+                  goal.velocity = 0;
+                  pivotController.setGoal(goal);
+                  pivotLeader.setVoltage(calculateVoltage(angleSupplier.get()));
+                }))
         .asProxy();
   }
 

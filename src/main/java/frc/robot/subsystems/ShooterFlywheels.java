@@ -24,12 +24,13 @@ import frc.robot.Constants.kShooter.kFlywheels;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
 import frc.robot.commands.SysIdRoutines.SysIdType;
+import frc.robot.utilities.Characterizable;
 import frc.robot.utilities.SparkConfigurator.LogData;
 import java.util.Set;
 import monologue.Annotations.Log;
 import monologue.Logged;
 
-public class ShooterFlywheels extends SubsystemBase implements Logged {
+public class ShooterFlywheels extends SubsystemBase implements Logged, Characterizable {
   // Motor Controllers
   private final CANSparkMax flywheel1;
   private final CANSparkMax flywheel2;
@@ -73,10 +74,14 @@ public class ShooterFlywheels extends SubsystemBase implements Logged {
     fly1Encoder = flywheel1.getEncoder();
     fly1Encoder.setPositionConversionFactor(kFlywheels.positionConversionFactor);
     fly1Encoder.setVelocityConversionFactor(kFlywheels.velocityConversionFactor);
+    fly1Encoder.setAverageDepth(4);
+    fly1Encoder.setMeasurementPeriod(12);
 
     fly2Encoder = flywheel2.getEncoder();
     fly2Encoder.setPositionConversionFactor(kFlywheels.positionConversionFactor);
     fly2Encoder.setVelocityConversionFactor(kFlywheels.velocityConversionFactor);
+    fly2Encoder.setAverageDepth(4);
+    fly2Encoder.setMeasurementPeriod(12);
 
     // PIDS
     fly1PID = flywheel1.getPIDController();
@@ -124,12 +129,20 @@ public class ShooterFlywheels extends SubsystemBase implements Logged {
     };
   }
 
+  public boolean atVelocitySetpoint() {
+    var velocities = getVelocities();
+    if (Math.abs((velocities[0] + velocities[1]) / 2 - setpoint)
+        < kFlywheels.shooterVelocityTolerance) return true;
+    return false;
+  }
+
   public void setVoltage(double voltage) {
     flywheel1.setVoltage(voltage);
     flywheel2.setVoltage(voltage);
   }
 
   public void setVelocity(double velocity) {
+    setpoint = velocity;
     fly1PID.setReference(velocity, ControlType.kVelocity, 0, fly1FF.calculate(velocity));
     fly2PID.setReference(velocity, ControlType.kVelocity, 0, fly2FF.calculate(velocity));
   }

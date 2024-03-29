@@ -406,28 +406,30 @@ public class Constants {
     public static class kFlywheels {
       public static boolean invert = true;
       public static double gearing = 4.0 / 3.0;
-      public static double positionConversionFactor = gearing * 2 * Math.PI;
-      public static double velocityConversionFactor = 1.0 / 60.0 * gearing * 2 * Math.PI;
+      public static double positionConversionFactor = gearing * 2 * Math.PI; // rotations to radians
+      public static double velocityConversionFactor =
+          1.0 / 60.0 * gearing * 2 * Math.PI; // rpm to rad/s
+      public static double shooterVelocityTolerance = 75; // rad/s
 
       public static class kFlywheel1 {
         public static int canID = 13;
         public static double ks = 0;
-        public static double kv = 0;
+        public static double kv = 0.0152;
         public static double ka = 0;
-        public static double minPIDOutput = 0;
-        public static double maxPIDOutput = 0;
-        public static double kP = 0;
+        public static double minPIDOutput = -1;
+        public static double maxPIDOutput = 1;
+        public static double kP = 0.007;
         public static double kD = 0;
       }
 
       public static class kFlywheel2 {
         public static int canID = 14;
         public static double ks = 0;
-        public static double kv = 0;
+        public static double kv = 0.0154;
         public static double ka = 0;
-        public static double minPIDOutput = 0;
-        public static double maxPIDOutput = 0;
-        public static double kP = 0;
+        public static double minPIDOutput = -1;
+        public static double maxPIDOutput = 1;
+        public static double kP = 0.007;
         public static double kD = 0;
       }
     }

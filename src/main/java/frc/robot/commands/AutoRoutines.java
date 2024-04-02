@@ -84,7 +84,7 @@ public class AutoRoutines {
     routines.put(
         "fourNote",
         flywheels
-            .shootTest(10)
+            .shootVoltage(10)
             .raceWith(
                 Commands.waitSeconds(0.5)
                     .andThen(
@@ -111,7 +111,7 @@ public class AutoRoutines {
     routines.put(
         "fiveNote",
         flywheels
-            .shootTest(10)
+            .shootVoltage(10)
             .raceWith(
                 Commands.waitSeconds(0.5)
                     .andThen(
@@ -142,7 +142,7 @@ public class AutoRoutines {
     routines.put(
         "far",
         flywheels
-            .shootTest(10)
+            .shootVoltage(10)
             .raceWith(
                 Commands.waitSeconds(0.5)
                     .andThen(
@@ -171,18 +171,18 @@ public class AutoRoutines {
     routines.put(
         "shootTaxiLeft",
         flywheels
-            .shootTest(10)
+            .shootVoltage(10)
             .raceWith(
                 Commands.waitSeconds(0.5)
                     .andThen(swerve.followPathCommand(paths.get("shootTaxiLeft"), true))));
     routines.put(
         "shootTaxiRight",
         flywheels
-            .shootTest(10)
+            .shootVoltage(10)
             .raceWith(
                 Commands.waitSeconds(0.5)
                     .andThen(swerve.followPathCommand(paths.get("shootTaxiRight"), true))));
-    routines.put("shootOnly", flywheels.shootTest(10));
+    routines.put("shootOnly", flywheels.shootVoltage(10));
   }
 
   // Adds all the Commands to the sendable chooser

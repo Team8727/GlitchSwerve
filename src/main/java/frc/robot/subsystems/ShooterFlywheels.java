@@ -20,6 +20,7 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.kIntakeShooter.kShootSpeaker;
 import frc.robot.Constants.kShooter.kFlywheels;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel1;
 import frc.robot.Constants.kShooter.kFlywheels.kFlywheel2;
@@ -97,16 +98,24 @@ public class ShooterFlywheels extends SubsystemBase implements Logged, Character
     fly2PID.setD(kFlywheel2.kD);
   }
 
-  public Command setRollerSpeed(double vel) { // TODO make sure inverted correctly
-    return this.run(() -> setVelocity(vel));
+  public Command setShooterSpeed(double velocity) { // TODO make sure inverted correctly
+    return this.run(() -> setVelocity(velocity)).finallyDo(() -> setVoltage(0));
   }
 
-  public Command shootTest(double voltage) {
+  public Command shootVoltage(double voltage) {
     return this.startEnd(() -> setVoltage(voltage), () -> setVoltage(0));
   }
 
-  public Command otherShoot(double voltage) {
+  public Command setAndForgetVoltage(double voltage) {
     return this.runOnce(() -> setVoltage(voltage));
+  }
+
+  public Command spinUpSpeaker() {
+    return this.run(() -> setVoltage(kShootSpeaker.shootVoltage));
+  }
+
+  public Command shootSpeaker() {
+    return shootVoltage(kShootSpeaker.shootVoltage);
   }
 
   // ---------- Public interface methods ----------

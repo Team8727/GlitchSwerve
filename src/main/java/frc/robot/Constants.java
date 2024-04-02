@@ -76,6 +76,8 @@ public class Constants {
     // TODO tune this below:
     public static Translation2d chassisOffset =
         new Translation2d(0, 0.4); // Should be about half the distance of the chassis
+
+    public static final double spinupDistance = 4.5; // m
   }
 
   public static class kClimber {
@@ -103,8 +105,9 @@ public class Constants {
 
   public static class kIntakeShooter {
     public static class kShootSpeaker {
-      public static double shootVoltage = 11;
-      public static double delay = 0.5;
+      public static double shootVoltage = 9;
+      public static double shootVelocity = 750;
+      public static double delay = 1;
     }
 
     public static class kHandOff {
@@ -113,7 +116,7 @@ public class Constants {
 
     public static class kShootAmp {
       public static double shootVoltage = 5;
-      public static double delay = 0.25;
+      public static double delay = 0.75;
     }
   }
 
@@ -127,7 +130,7 @@ public class Constants {
     public static double maxTransSpeed = 5;
     public static double maxAngSpeed = 3 * Math.PI;
 
-    public static double maxTransAccel = 1.4 * 9.81;
+    public static double maxTransAccel = 1.35 * 9.81;
     public static double maxAngAccel = 10 * 2 * Math.PI;
 
     // Operator interface constants
@@ -267,8 +270,8 @@ public class Constants {
     // Vision
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(
-            new Translation3d(-0.29972, -0.1145794, 0.4792472),
-            new Rotation3d(0, -0.174533, Math.PI));
+            new Translation3d(-0.29972, -0.09552, 0.53),
+            new Rotation3d(0, -0.174533, Math.PI + 0.038));
     public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),
@@ -296,9 +299,9 @@ public class Constants {
       // FF
       // public static double kS = 0.4273;
       public static double kS = 0.15;
-      public static double kG = 0.182;
-      public static double kV = 1.13;
-      public static double kA = 0.048;
+      public static double kG = 0.18;
+      public static double kV = 1.17;
+      public static double kA = 0.043;
 
       // ProfiledPIDController
       public static double maxVel = 8;
@@ -319,7 +322,7 @@ public class Constants {
 
       public enum IntakePosition {
         HOME(Math.PI),
-        DEPLOYED(0),
+        DEPLOYED(0.05),
         EJECT(0.25 * Math.PI);
         public final double angle;
 
@@ -405,7 +408,7 @@ public class Constants {
 
     public static class kFlywheels {
       public static boolean invert = true;
-      public static double gearing = 4.0 / 3.0;
+      public static double gearing = 2.0 / 1.0;
       public static double positionConversionFactor = gearing * 2 * Math.PI; // rotations to radians
       public static double velocityConversionFactor =
           1.0 / 60.0 * gearing * 2 * Math.PI; // rpm to rad/s
@@ -414,22 +417,22 @@ public class Constants {
       public static class kFlywheel1 {
         public static int canID = 13;
         public static double ks = 0;
-        public static double kv = 0.0152;
+        public static double kv = 0.0152 * 0.66;
         public static double ka = 0;
         public static double minPIDOutput = -1;
         public static double maxPIDOutput = 1;
-        public static double kP = 0.007;
+        public static double kP = 0.004;
         public static double kD = 0;
       }
 
       public static class kFlywheel2 {
         public static int canID = 14;
         public static double ks = 0;
-        public static double kv = 0.0154;
+        public static double kv = 0.0157 * 0.66;
         public static double ka = 0;
         public static double minPIDOutput = -1;
         public static double maxPIDOutput = 1;
-        public static double kP = 0.007;
+        public static double kP = 0.004;
         public static double kD = 0;
       }
     }

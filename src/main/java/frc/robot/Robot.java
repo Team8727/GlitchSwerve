@@ -148,6 +148,12 @@ public class Robot extends TimedRobot implements Logged {
     new Trigger(intakeRollers::isIndexing)
         .and(DriverStation::isTeleopEnabled)
         .onTrue(intakeRollers.index());
+
+    new Trigger(DriverStation::isTeleopEnabled)
+        .and(handoffRollers::hasPiece)
+        .and(shooterPivot::isHome)
+        .and(swerve::isInSpeakerRange)
+        .whileTrue(shooterFlywheels.spinUpSpeaker());
   }
 
   // Bind commands to triggers
@@ -251,11 +257,7 @@ public class Robot extends TimedRobot implements Logged {
 
   @Override
   public void teleopInit() {
-    shooterFlywheels.setDefaultCommand(
-        Commands.either(
-            shooterFlywheels.otherShoot(4),
-            shooterFlywheels.otherShoot(0),
-            () -> shooterPivot.getGoalPosition() == ShooterPosition.HOME));
+    shooterFlywheels.setDefaultCommand(shooterFlywheels.setAndForgetVoltage(0));
   }
 
   @Override

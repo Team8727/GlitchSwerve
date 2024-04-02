@@ -71,9 +71,10 @@ public class IntakeShooter {
 
   public Command shootSpeaker() {
     return shooterFlywheels
-        .shootTest(kShootSpeaker.shootVoltage)
+        .setShooterSpeed(kShootSpeaker.shootVelocity)
         .raceWith(
             Commands.waitSeconds(kShootSpeaker.delay)
+                .until(shooterFlywheels::atVelocitySetpoint)
                 .andThen(
                     handoffRollers
                         .feedShooterCommand()
@@ -99,7 +100,7 @@ public class IntakeShooter {
 
   public Command shootAmp() {
     return shooterFlywheels
-        .shootTest(kShootAmp.shootVoltage)
+        .shootVoltage(kShootAmp.shootVoltage)
         .raceWith(
             Commands.waitSeconds(kShootAmp.delay).andThen(handoffRollers.feedShooterCommand()))
         .andThen(shooterPivot.goToPositionCommand(ShooterPosition.HOME));
@@ -122,7 +123,7 @@ public class IntakeShooter {
 
   public Command sourceIntake() {
     return shooterFlywheels
-        .shootTest(-4)
+        .shootVoltage(-4)
         .deadlineWith(
             handoffRollers
                 .startEnd(() -> handoffRollers.setVoltage(-3), () -> handoffRollers.setVoltage(0))

@@ -53,6 +53,7 @@ import frc.robot.Constants.kOI;
 import frc.robot.Constants.kSwerve;
 import frc.robot.Constants.kSwerve.Auton;
 import frc.robot.Constants.kSwerve.kModule;
+import frc.robot.Constants.kSwerveShoot;
 import frc.robot.commands.SysIdRoutines.SysIdType;
 import frc.robot.utilities.Characterizable;
 import frc.robot.utilities.ChassisLimiter;
@@ -568,6 +569,16 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
   public SwerveState getSwerveState() {
     return swerveState;
+  }
+
+  public boolean isInSpeakerRange() {
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Blue)
+      return kSwerveShoot.blueSpeaker.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.spinupDistance;
+    else
+      return kSwerveShoot.redSpeaker.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.spinupDistance;
   }
 
   // ---------- Private hardware interface methods ----------

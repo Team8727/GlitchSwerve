@@ -170,9 +170,13 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     // Set appropriate goal
     profiledPIDController.setGoal(angle);
 
+    // Update measurements and get feedback voltage
+    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle());
+
     // Get setpoint from profile
     var nextSetpoint = profiledPIDController.getSetpoint();
 
+    // Calculate acceleration
     var accel = (nextSetpoint.velocity - currentSetpoint.velocity) / 0.02;
 
     log("Accel", accel);
@@ -182,7 +186,6 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
     // Calculate voltages
     double feedForwardVoltage =
         pivotFF.calculate(nextSetpoint.position + kPivot.cogOffset, nextSetpoint.velocity, accel);
-    double feedbackVoltage = profiledPIDController.calculate(getPivotAngle());
 
     // Log Values
     this.log("FeedbackVoltage", feedbackVoltage);

@@ -95,7 +95,7 @@ public class IntakeShooter {
         .andThen(Commands.idle())
         .deadlineWith(
             intakeRollers.startEnd(
-                () -> intakeRollers.runRollers(-2.5), () -> intakeRollers.runRollers(0)));
+                () -> intakeRollers.runRollers(-2), () -> intakeRollers.runRollers(0)));
   }
 
   public Command shootAmp() {

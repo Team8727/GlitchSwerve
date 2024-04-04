@@ -192,7 +192,9 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
     // Path Follower Profiles
     xController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    xController.setTolerance(0.02);
     yController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
+    yController.setTolerance(0.02);
     rotController = new ProfiledPIDController(Auton.angP, 0, 0, pathFollowConstraints);
     rotController.enableContinuousInput(-Math.PI, Math.PI);
   }
@@ -373,31 +375,41 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
             })
         .andThen(
             this.run(
-                () -> {
-                  // Calculate Feedback
-                  double xFB = xController.calculate(getPose().getX());
-                  double yFB = yController.calculate(getPose().getY());
+                    () -> {
+                      // Calculate Feedback
+                      double xFB = xController.calculate(getPose().getX());
+                      double yFB = yController.calculate(getPose().getY());
 
-                  double rotFB = rotController.calculate(getPose().getRotation().getRadians());
+                      double rotFB = rotController.calculate(getPose().getRotation().getRadians());
 
-                  // Calculate full chassis Speeds
-                  pathChassisSpeeds =
-                      new ChassisSpeeds(
-                          xFB + xController.getSetpoint().velocity,
-                          yFB + yController.getSetpoint().velocity,
-                          rotFB + rotController.getSetpoint().velocity);
-                  this.log("xControllerSetpoint", xController.getSetpoint().position);
-                  this.log("yControllerSetpoint", yController.getSetpoint().position);
-                  this.log("rotController", rotController.getSetpoint().position);
-                  this.log("xSetVel", xController.getSetpoint().velocity);
-                  this.log("ySetVel", yController.getSetpoint().velocity);
-                  this.log("rotSetVel", rotController.getSetpoint().velocity);
-                  this.log("xFB", xFB);
-                  this.log("yFB", yFB);
-                  this.log("rotFB", rotFB);
-                  drive(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(pathChassisSpeeds, getHeading()), true);
-                }));
+                      // Calculate full chassis Speeds
+                      pathChassisSpeeds =
+                          new ChassisSpeeds(
+                              xFB + xController.getSetpoint().velocity,
+                              yFB + yController.getSetpoint().velocity,
+                              rotFB + rotController.getSetpoint().velocity);
+                      this.log("xControllerSetpoint", xController.getSetpoint().position);
+                      this.log("yControllerSetpoint", yController.getSetpoint().position);
+                      this.log("rotController", rotController.getSetpoint().position);
+                      this.log("xSetVel", xController.getSetpoint().velocity);
+                      this.log("ySetVel", yController.getSetpoint().velocity);
+                      this.log("rotSetVel", rotController.getSetpoint().velocity);
+                      this.log("xFB", xFB);
+                      this.log("yFB", yFB);
+                      this.log("rotFB", rotFB);
+                      drive(
+                          ChassisSpeeds.fromFieldRelativeSpeeds(pathChassisSpeeds, getHeading()),
+                          true);
+                    })
+                .until(
+                    () -> xController.atGoal() && yController.atGoal() && rotController.atGoal()));
+  }
+
+  public Command driveFieldSpeedsCommand(ChassisSpeeds fieldRelativeSpeeds) {
+    return this.startEnd(
+        () ->
+            drive(ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeSpeeds, getHeading()), false),
+        () -> drive(new ChassisSpeeds(), false));
   }
 
   // ---------- Other commands ----------

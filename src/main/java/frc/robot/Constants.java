@@ -77,7 +77,13 @@ public class Constants {
     public static Translation2d chassisOffset =
         new Translation2d(0, 0.4); // Should be about half the distance of the chassis
 
+    public static Translation2d stopDistance =
+        new Translation2d(0, 0.1); // Should be about half the distance of the chassis
+
     public static final double spinupDistance = 4.5; // m
+
+    public static final double bumpUpSpeed = 0.2; // m/s
+    public static final double bumpUpTime = 0.2; // s
   }
 
   public static class kClimber {
@@ -116,7 +122,7 @@ public class Constants {
 
     public static class kShootAmp {
       public static double shootVoltage = 5;
-      public static double delay = 0.75;
+      public static double delay = 0.25;
     }
   }
 

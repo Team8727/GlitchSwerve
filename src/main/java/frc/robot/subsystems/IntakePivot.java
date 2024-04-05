@@ -52,7 +52,7 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
   private IntakePosition goalPosition = IntakePosition.HOME;
 
   // Shuffleboard
-  private ShuffleboardTab tab = Shuffleboard.getTab("Active Configs");
+  private ShuffleboardTab tab = Shuffleboard.getTab("Intake Pivot");
 
   public IntakePivot() {
     // Motor Configs
@@ -86,7 +86,6 @@ public class IntakePivot extends SubsystemBase implements Characterizable, Logge
 
     // Button to Reset Encoder
     tab.add("Reset Intake Pivot Encoder", resetEncoder());
-    tab.add("PID", profiledPIDController);
     tab.addString("Intake Position", () -> goalPosition.name());
   }
 

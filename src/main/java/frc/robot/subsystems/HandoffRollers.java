@@ -20,7 +20,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
   public HandoffRollers() {
     rollerTalonSRX.setInverted(kHandoffRollers.inverted);
     rollerTalonSRX.setNeutralMode(NeutralMode.Brake);
-    Shuffleboard.getTab("HandoffRollers").addBoolean("Upper Sensor", this::getUpperSensor);
+    Shuffleboard.getTab("Driver Info").addBoolean("Upper Sensor", this::getUpperSensor);
   }
 
   public void setVoltage(double voltage) {

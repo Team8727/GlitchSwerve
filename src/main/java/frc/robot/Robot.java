@@ -4,11 +4,13 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -43,6 +45,7 @@ import monologue.Monologue;
 public class Robot extends TimedRobot implements Logged {
   private CommandXboxController driverController = new CommandXboxController(0);
   private CommandJoystick oopsieWoopsieController = new CommandJoystick(1);
+  private GenericEntry autoAmpDisableSwitch;
 
   // Subsystems
   private Swerve swerve = new Swerve();
@@ -122,6 +125,8 @@ public class Robot extends TimedRobot implements Logged {
                   shooterFlywheels.setDefaultCommand(intakeShooter.sourceIntake());
                 }));
 
+    oopsieWoopsieController.button(1).toggleOnTrue(shooterFlywheels.spinUpSpeaker());
+
     driverController
         .x()
         .onTrue(
@@ -133,6 +138,7 @@ public class Robot extends TimedRobot implements Logged {
     driverController
         .leftTrigger()
         .and(driverController.rightTrigger())
+        .and(() -> !autoAmpDisableSwitch.getBoolean(false))
         .toggleOnTrue(
             swerveShoot
                 .autoAmp()
@@ -142,6 +148,14 @@ public class Robot extends TimedRobot implements Logged {
                             || !handoffRollers.hasPiece()
                             || !swerve.isInAutoAmpRange())
                 .withName("autoAmp"));
+
+    driverController
+        .leftTrigger()
+        .and(driverController.rightTrigger())
+        .and(() -> autoAmpDisableSwitch.getBoolean(false))
+        .and(() -> shooterPivot.getGoalPosition() == ShooterPosition.HOME)
+        .and(handoffRollers::hasPiece)
+        .onTrue(intakeShooter.pivotAmp());
   }
 
   private void configureCommands() {
@@ -229,7 +243,12 @@ public class Robot extends TimedRobot implements Logged {
     // Start auto selector
     autoCommand = autos.getSelector().getSelected();
     autos.getSelector().onChange((command) -> autoCommand = command);
-    Shuffleboard.getTab("Auto").add("Auto selector", autos.getSelector());
+    Shuffleboard.getTab("Driver Info").add("Auto selector", autos.getSelector());
+    autoAmpDisableSwitch =
+        Shuffleboard.getTab("Driver Info")
+            .add("Disable Auto Amp", 0)
+            .withWidget(BuiltInWidgets.kToggleSwitch)
+            .getEntry();
   }
 
   @Override

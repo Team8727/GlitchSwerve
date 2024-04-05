@@ -43,8 +43,8 @@ public class SwerveShoot {
         .andThen(
             swerve
                 .driveFieldSpeedsCommand(new ChassisSpeeds(0, kSwerveShoot.bumpUpSpeed, 0))
-                .withTimeout(kSwerveShoot.bumpUpTime)
-                .alongWith(intakeShooter.pivotAmp()))
+                .withTimeout(kSwerveShoot.bumpUpTime))
+        .alongWith(Commands.idle().until(swerve::isInAmpRange).andThen(intakeShooter.pivotAmp()))
         .andThen(intakeShooter.shootAmp());
   }
 

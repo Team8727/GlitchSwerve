@@ -92,10 +92,9 @@ public class IntakeShooter {
   public Command pivotAmp() {
     return shooterPivot
         .goToPositionCommand(ShooterPosition.AMP)
-        .andThen(Commands.idle())
         .deadlineWith(
             intakeRollers.startEnd(
-                () -> intakeRollers.runRollers(-2), () -> intakeRollers.runRollers(0)));
+                () -> intakeRollers.runRollers(-1.7), () -> intakeRollers.runRollers(0)));
   }
 
   public Command shootAmp() {

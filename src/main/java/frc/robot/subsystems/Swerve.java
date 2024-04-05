@@ -464,6 +464,18 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     }
   }
 
+  /*public Command characterizeWheelDiameter() {
+    final Double startPosition = 0;
+    double startAngle = 0;
+    return driveFieldSpeedsCommand(new ChassisSpeeds(0, 0, 3))
+        .raceWith(Commands.waitSeconds(1)
+        .andThen(this.runOnce(() -> {
+            startPosition = getPositions()[0].distanceMeters;
+            startAngle = getHeading().getRadians();
+        }))
+        );
+  }*/
+
   // ---------- Public interface methods ----------
 
   // Drive chassis-oriented (optional flag for closed loop velocity control)
@@ -532,10 +544,13 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
       Optional<EstimatedRobotPose> estimatedGlobalPose = photonPoseEstimator1.update(result);
       if (estimatedGlobalPose.isPresent()) {
         double distance = result.getBestTarget().getBestCameraToTarget().getTranslation().getNorm();
-        poseEstimator.addVisionMeasurement(
-            estimatedGlobalPose.get().estimatedPose.toPose2d(),
-            estimatedGlobalPose.get().timestampSeconds,
-            kSwerve.visionStdDevs.times(distance * kSwerve.visionScalingFactor));
+        if (poseEstimateIsGood(estimatedGlobalPose.get())) {
+          log("Using Estimate", true);
+          poseEstimator.addVisionMeasurement(
+              estimatedGlobalPose.get().estimatedPose.toPose2d(),
+              estimatedGlobalPose.get().timestampSeconds,
+              kSwerve.visionStdDevs.times(distance * kSwerve.visionScalingFactor));
+        } else log("Using Estimate", false);
         photonPose = estimatedGlobalPose.get().estimatedPose;
       }
     }
@@ -552,6 +567,32 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
         }
       }
     }
+  }
+
+  public boolean poseEstimateIsGood(EstimatedRobotPose photonPoseEstimate) {
+    boolean tagsWithinRange = false;
+    double furthestTag = 0;
+
+    // Iterate over tags and set flag if there is at least one tag in range as well as find the
+    // furthest tag
+    for (var tag : photonPoseEstimate.targetsUsed) {
+      var distance = tag.getBestCameraToTarget().getTranslation().getNorm();
+      if (distance <= 3.2) tagsWithinRange = true;
+
+      if (furthestTag < distance) furthestTag = distance;
+    }
+    log("Tags within range", tagsWithinRange);
+    log("Furhtest tag", furthestTag);
+    log("Z Height", photonPoseEstimate.estimatedPose.getZ());
+
+    // If no tags are within the required range or any tags are outside the maximum range throw out
+    // the result
+    if (!tagsWithinRange || furthestTag > 5) return false;
+
+    // If estimated position is underground or flying throw out the result
+    if (Math.abs(photonPoseEstimate.estimatedPose.getZ()) > 0.17) return false;
+
+    return true;
   }
 
   // Set an initial pose for the pose estimator
@@ -591,6 +632,16 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     else
       return kSwerveShoot.redSpeaker.minus(getPose().getTranslation()).getNorm()
           < kSwerveShoot.spinupDistance;
+  }
+
+  public boolean isInAmpRange() {
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Blue)
+      return kSwerveShoot.blueAmp.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.ampDistance;
+    else
+      return kSwerveShoot.redAmp.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.ampDistance;
   }
 
   // ---------- Private hardware interface methods ----------

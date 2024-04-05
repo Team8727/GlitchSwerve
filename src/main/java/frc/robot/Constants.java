@@ -81,9 +81,10 @@ public class Constants {
         new Translation2d(0, 0.1); // Should be about half the distance of the chassis
 
     public static final double spinupDistance = 4.5; // m
+    public static final double ampDistance = 2;
 
-    public static final double bumpUpSpeed = 0.2; // m/s
-    public static final double bumpUpTime = 0.2; // s
+    public static final double bumpUpSpeed = 0.9; // m/s
+    public static final double bumpUpTime = 0.4; // s
   }
 
   public static class kClimber {
@@ -228,7 +229,7 @@ public class Constants {
       public static final int steerMaxCurrent = 35; // amps
 
       // Physical dimensions/values
-      public static final double wheelDiameter = 0.97 * Units.inchesToMeters(3);
+      public static final double wheelDiameter = 1.06 * Units.inchesToMeters(3);
       public static final double wheelCircumference = wheelDiameter * Math.PI; // meters
       public static final double driveMotorReduction = (45.0 * 22) / (drivePinionTeeth * 15);
       public static final double steerMotorReduction = 9424.0 / 203.0;
@@ -288,7 +289,7 @@ public class Constants {
     public static final Matrix<N3, N1> visionStdDevs =
         MatBuilder.fill(Nat.N3(), Nat.N1(), 0.03, 0.03, 0.25);
     public static final double visionScalingFactor =
-        3; // scaling factor applied to the visionStdDevs per meter bigger means trust less at a
+        2.3; // scaling factor applied to the visionStdDevs per meter bigger means trust less at a
     // distance
   }
 

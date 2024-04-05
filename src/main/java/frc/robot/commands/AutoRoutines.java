@@ -20,6 +20,8 @@ public class AutoRoutines {
 
   private final ShooterFlywheels flywheels;
   private final IntakeShooter intakeShooterCommands;
+
+  @SuppressWarnings("unused")
   private final IntakePivot intakePivot;
 
   private final LinkedHashMap<String, PathPlannerPath> paths =

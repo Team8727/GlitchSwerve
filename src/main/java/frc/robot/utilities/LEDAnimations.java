@@ -56,6 +56,18 @@ public class LEDAnimations {
     }
   }
 
+  public void rainbow(LEDSubStrip section, int interval) {
+    // For every pixel
+    for (var i = 0; i < section.getLength(); i++) {
+      // Calculate the hue - hue is easier for rainbows because the color
+      // shape is a circle so only one value needs to precess
+      int hueInitial = (count / interval) % 180;
+      int hue = (hueInitial + (i * 180 / section.getLength())) % 180;
+      // Set the value
+      section.setHSV(i, hue, 255, 128);
+    }
+  }
+
   public void update() {
     count = (count + 1) % maxCount;
   }

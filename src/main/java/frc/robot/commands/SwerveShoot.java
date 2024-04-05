@@ -44,7 +44,7 @@ public class SwerveShoot {
             swerve
                 .driveFieldSpeedsCommand(new ChassisSpeeds(0, kSwerveShoot.bumpUpSpeed, 0))
                 .withTimeout(kSwerveShoot.bumpUpTime))
-        .alongWith(Commands.idle().until(swerve::isInAmpRange).andThen(intakeShooter.pivotAmp()))
+        .alongWith(Commands.waitUntil(swerve::isInAmpPivotRange).andThen(intakeShooter.pivotAmp()))
         .andThen(intakeShooter.shootAmp());
   }
 

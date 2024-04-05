@@ -96,6 +96,17 @@ public class Indications extends SubsystemBase {
   private void populateRules() {
     ledsRules.add(
         new Rule(
+            120,
+            () ->
+                (swerve.getCurrentCommand() != null ? swerve.getCurrentCommand().getName() : "")
+                    == "autoAmp",
+            () -> {
+              animations.rainbow(leftStrip, 1);
+              animations.rainbow(rightStrip, 1);
+            }));
+
+    ledsRules.add(
+        new Rule(
             100,
             () -> handoffRollers.hasPiece(),
             () -> {

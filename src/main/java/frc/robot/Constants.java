@@ -81,7 +81,8 @@ public class Constants {
         new Translation2d(0, 0.1); // Should be about half the distance of the chassis
 
     public static final double spinupDistance = 4.5; // m
-    public static final double ampDistance = 2;
+    public static final double ampPivotDistance = 2;
+    public static final double autoAmpEnableRnage = 5; // m
 
     public static final double bumpUpSpeed = 0.9; // m/s
     public static final double bumpUpTime = 0.4; // s

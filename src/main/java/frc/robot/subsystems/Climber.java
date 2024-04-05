@@ -19,7 +19,10 @@ public class Climber extends SubsystemBase {
 
   private final CANSparkMax climbMotor;
   private final RelativeEncoder climbEncoder;
+
+  @SuppressWarnings("unused")
   private final SimpleMotorFeedforward feedforward;
+
   private final SparkPIDController climbPID;
   private LinearFilter currentFilter;
 

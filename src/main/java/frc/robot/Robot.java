@@ -133,9 +133,15 @@ public class Robot extends TimedRobot implements Logged {
     driverController
         .leftTrigger()
         .and(driverController.rightTrigger())
-        .and(() -> shooterPivot.getGoalPosition() == ShooterPosition.HOME)
-        .and(() -> handoffRollers.hasPiece())
-        .onTrue(swerveShoot.autoAmp());
+        .toggleOnTrue(
+            swerveShoot
+                .autoAmp()
+                .unless(
+                    () ->
+                        shooterPivot.getGoalPosition() != ShooterPosition.HOME
+                            || !handoffRollers.hasPiece()
+                            || !swerve.isInAutoAmpRange())
+                .withName("autoAmp"));
   }
 
   private void configureCommands() {

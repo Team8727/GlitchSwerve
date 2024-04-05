@@ -583,7 +583,6 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
     }
     log("Tags within range", tagsWithinRange);
     log("Furhtest tag", furthestTag);
-    log("Z Height", photonPoseEstimate.estimatedPose.getZ());
 
     // If no tags are within the required range or any tags are outside the maximum range throw out
     // the result
@@ -634,14 +633,24 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
           < kSwerveShoot.spinupDistance;
   }
 
-  public boolean isInAmpRange() {
+  public boolean isInAmpPivotRange() {
     var alliance = DriverStation.getAlliance();
     if (alliance.isPresent() && alliance.get() == Alliance.Blue)
       return kSwerveShoot.blueAmp.minus(getPose().getTranslation()).getNorm()
-          < kSwerveShoot.ampDistance;
+          < kSwerveShoot.ampPivotDistance;
     else
       return kSwerveShoot.redAmp.minus(getPose().getTranslation()).getNorm()
-          < kSwerveShoot.ampDistance;
+          < kSwerveShoot.ampPivotDistance;
+  }
+
+  public boolean isInAutoAmpRange() {
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent() && alliance.get() == Alliance.Blue)
+      return kSwerveShoot.blueAmp.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.autoAmpEnableRnage;
+    else
+      return kSwerveShoot.redAmp.minus(getPose().getTranslation()).getNorm()
+          < kSwerveShoot.autoAmpEnableRnage;
   }
 
   // ---------- Private hardware interface methods ----------

@@ -108,7 +108,7 @@ public class Constants {
     public static final double timeConstant = 0;
     public static final double period = 0.02;
 
-    public static final double rotationsToClimb = 135;
+    public static final double rotationsToClimb = 90;
   }
 
   public static class kIntakeShooter {

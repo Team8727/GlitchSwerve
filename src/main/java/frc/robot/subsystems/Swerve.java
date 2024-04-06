@@ -192,11 +192,12 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
 
     // Path Follower Profiles
     xController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
-    xController.setTolerance(0.02);
+    xController.setTolerance(0.03);
     yController = new ProfiledPIDController(Auton.transP, 0, 0, pathFollowConstraints);
-    yController.setTolerance(0.02);
+    yController.setTolerance(0.03);
     rotController = new ProfiledPIDController(Auton.angP, 0, 0, pathFollowConstraints);
     rotController.enableContinuousInput(-Math.PI, Math.PI);
+    rotController.setTolerance(0.1);
   }
 
   // ---------- Drive Commands ----------
@@ -397,15 +398,15 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
                       this.log("xFB", xFB);
                       this.log("yFB", yFB);
                       this.log("rotFB", rotFB);
+                      this.log("x at goal", xController.atGoal());
+                      this.log("y at goal", yController.atGoal());
+                      this.log("z at goal", rotController.atGoal());
                       drive(
                           ChassisSpeeds.fromFieldRelativeSpeeds(pathChassisSpeeds, getHeading()),
                           true);
                     })
                 .until(
-                    () ->
-                        xController.getGoal() == xController.getSetpoint()
-                            && yController.getGoal() == yController.getSetpoint()
-                            && rotController.getGoal() == rotController.getSetpoint()));
+                    () -> xController.atGoal() && yController.atGoal() && rotController.atGoal()));
   }
 
   public Command driveFieldSpeedsCommand(ChassisSpeeds fieldRelativeSpeeds) {

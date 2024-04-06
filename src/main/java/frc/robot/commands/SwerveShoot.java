@@ -22,25 +22,26 @@ public class SwerveShoot {
   }
 
   public Command autoAmp() {
-    return Commands.either(
-            swerve.driveToPointProfiles(
-                new Pose2d(
-                    kSwerveShoot
-                        .blueAmp
-                        .minus(kSwerveShoot.chassisOffset)
-                        .minus(kSwerveShoot.stopDistance),
-                    kSwerveShoot.rotationAmpShot)),
-            swerve.driveToPointProfiles(
-                new Pose2d(
-                    kSwerveShoot
-                        .redAmp
-                        .minus(kSwerveShoot.chassisOffset)
-                        .minus(kSwerveShoot.stopDistance),
-                    kSwerveShoot.rotationAmpShot)),
-            () ->
-                (DriverStation.getAlliance().isPresent()
-                    && DriverStation.getAlliance().get() == Alliance.Blue))
-        .andThen(
+    return Commands.sequence(
+            Commands.either(
+                    swerve.driveToPointProfiles(
+                        new Pose2d(
+                            kSwerveShoot
+                                .blueAmp
+                                .minus(kSwerveShoot.chassisOffset)
+                                .minus(kSwerveShoot.stopDistance),
+                            kSwerveShoot.rotationAmpShot)),
+                    swerve.driveToPointProfiles(
+                        new Pose2d(
+                            kSwerveShoot
+                                .redAmp
+                                .minus(kSwerveShoot.chassisOffset)
+                                .minus(kSwerveShoot.stopDistance),
+                            kSwerveShoot.rotationAmpShot)),
+                    () ->
+                        (DriverStation.getAlliance().isPresent()
+                            && DriverStation.getAlliance().get() == Alliance.Blue))
+                .withTimeout(kSwerveShoot.autoAlignTimeout),
             swerve
                 .driveFieldSpeedsCommand(new ChassisSpeeds(0, kSwerveShoot.bumpUpSpeed, 0))
                 .withTimeout(kSwerveShoot.bumpUpTime))

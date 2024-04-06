@@ -86,6 +86,7 @@ public class Constants {
 
     public static final double bumpUpSpeed = 0.9; // m/s
     public static final double bumpUpTime = 0.4; // s
+    public static final double autoAlignTimeout = 4;
   }
 
   public static class kClimber {

@@ -230,7 +230,7 @@ public class Constants {
       public static final int steerMaxCurrent = 35; // amps
 
       // Physical dimensions/values
-      public static final double wheelDiameter = 1.06 * Units.inchesToMeters(3);
+      public static final double wheelDiameter = 0.97 * Units.inchesToMeters(3);
       public static final double wheelCircumference = wheelDiameter * Math.PI; // meters
       public static final double driveMotorReduction = (45.0 * 22) / (drivePinionTeeth * 15);
       public static final double steerMotorReduction = 9424.0 / 203.0;
@@ -279,7 +279,7 @@ public class Constants {
     public static final Transform3d aprilTagCamera1PositionTransform =
         new Transform3d(
             new Translation3d(-0.29972, -0.09552, 0.53),
-            new Rotation3d(0, -0.174533, Math.PI + 0.038));
+            new Rotation3d(0, -Units.degreesToRadians(25), Math.PI));
     public static final Transform3d aprilTagCamera2PositionTransform =
         new Transform3d(
             new Translation3d(0.243, 0.193, 0.229),

@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.kShooter.kHandoffRollers;
 import monologue.Annotations.Log;
@@ -21,6 +22,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
     rollerTalonSRX.setInverted(kHandoffRollers.inverted);
     rollerTalonSRX.setNeutralMode(NeutralMode.Brake);
     Shuffleboard.getTab("Driver Info").addBoolean("Upper Sensor", this::getUpperSensor);
+    Shuffleboard.getTab("Driver Info").addBoolean("Has Piece", this::hasPiece);
   }
 
   public void setVoltage(double voltage) {
@@ -36,6 +38,7 @@ public class HandoffRollers extends SubsystemBase implements Logged {
     return lowerSensor.get();
   }
 
+  @Log.NT
   public boolean getUpperSensor() {
     return !upperSensor.get();
   }
@@ -61,13 +64,13 @@ public class HandoffRollers extends SubsystemBase implements Logged {
   }
 
   public Command intakeCommand() {
-    return this.startEnd(
-            () -> setVoltage(kHandoffRollers.intakeVoltage),
-            () -> {
+    return this.runOnce(() -> setVoltage(kHandoffRollers.intakeVoltage))
+        .andThen(Commands.waitUntil(this::getUpperSensor))
+        .finallyDo(
+            (interrupted) -> {
               setVoltage(0);
               if (getUpperSensor()) hasPiece = true;
-            })
-        .until(this::getUpperSensor);
+            });
   }
 
   public Command outtakeCommand() {

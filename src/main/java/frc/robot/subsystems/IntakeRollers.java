@@ -82,8 +82,7 @@ public class IntakeRollers extends SubsystemBase implements Logged {
 
   public Command intake() {
     return this.runOnce(() -> runRollers(kRollers.intakeVoltage))
-        .andThen(Commands.idle(this))
-        .until(this::getPieceCheck)
+        .andThen(Commands.waitUntil(this::getPieceCheck))
         .finallyDo(
             (interrupted) -> {
               runRollers(0);

@@ -94,7 +94,7 @@ public class ShooterPivot extends SubsystemBase implements Logged, Characterizab
     currentSetpoint = pivotController.getSetpoint();
 
     this.setDefaultCommand(holdAngle());
-    Shuffleboard.getTab("ShooterPivot").addString("Intake Position", () -> goalPosition.name());
+    Shuffleboard.getTab("ShooterPivot").addString("Shooter Position", () -> goalPosition.name());
   }
 
   // ---------- Commands ----------

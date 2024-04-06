@@ -140,7 +140,7 @@ public class Robot extends TimedRobot implements Logged {
         .leftTrigger()
         .and(driverController.rightTrigger())
         .and(() -> !autoAmpDisableSwitch.getBoolean(false))
-        .toggleOnTrue(
+        .whileTrue(
             swerveShoot
                 .autoAmp()
                 .unless(

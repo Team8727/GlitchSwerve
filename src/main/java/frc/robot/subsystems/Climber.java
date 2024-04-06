@@ -59,7 +59,7 @@ public class Climber extends SubsystemBase {
 
   public Command climbDown(double velocity) {
     return run(() -> climbMotor.setVoltage(-velocity))
-        .until(() -> climbEncoder.getPosition() <= 0)
+        .until(() -> climbEncoder.getPosition() <= 1)
         .finallyDo(() -> climbMotor.setVoltage(0));
   }
 

@@ -450,7 +450,7 @@ public class Constants {
       public static double shooterFeedVoltage = 7;
       public static double sourceIntakeVoltage = -3;
       public static double intakeVoltage = 7;
-      public static double shooterFeedTime = 0.2;
+      public static double shooterFeedTime = 0.3;
       public static double sourceIntakeFeedTime = 0.3;
       public static boolean inverted = false;
 

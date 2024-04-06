@@ -93,8 +93,10 @@ public class IntakeShooter {
     return shooterPivot
         .goToPositionCommand(ShooterPosition.AMP)
         .deadlineWith(
-            intakeRollers.startEnd(
-                () -> intakeRollers.runRollers(-1.5), () -> intakeRollers.runRollers(0)));
+            Commands.waitSeconds(0.04)
+                .andThen(
+                    intakeRollers.startEnd(
+                        () -> intakeRollers.runRollers(-1.6), () -> intakeRollers.runRollers(0))));
   }
 
   public Command shootAmp() {

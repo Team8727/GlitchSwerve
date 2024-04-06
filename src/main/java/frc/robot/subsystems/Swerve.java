@@ -402,7 +402,10 @@ public class Swerve extends SubsystemBase implements Logged, Characterizable {
                           true);
                     })
                 .until(
-                    () -> xController.atGoal() && yController.atGoal() && rotController.atGoal()));
+                    () ->
+                        xController.getGoal() == xController.getSetpoint()
+                            && yController.getGoal() == yController.getSetpoint()
+                            && rotController.getGoal() == rotController.getSetpoint()));
   }
 
   public Command driveFieldSpeedsCommand(ChassisSpeeds fieldRelativeSpeeds) {

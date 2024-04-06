@@ -94,7 +94,7 @@ public class IntakeShooter {
         .goToPositionCommand(ShooterPosition.AMP)
         .deadlineWith(
             intakeRollers.startEnd(
-                () -> intakeRollers.runRollers(-1.7), () -> intakeRollers.runRollers(0)));
+                () -> intakeRollers.runRollers(-1.5), () -> intakeRollers.runRollers(0)));
   }
 
   public Command shootAmp() {

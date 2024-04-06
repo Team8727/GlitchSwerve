@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
@@ -163,7 +164,8 @@ public class Robot extends TimedRobot implements Logged {
         .and(() -> !handoffRollers.hasPiece())
         .and(intakePivot::isHome)
         .and(DriverStation::isTeleopEnabled)
-        .onTrue(intakeShooter.handOff());
+        .onTrue(
+            intakeShooter.handOff().withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
 
     new Trigger(intakeRollers::isIndexing)
         .and(DriverStation::isTeleopEnabled)
@@ -246,7 +248,7 @@ public class Robot extends TimedRobot implements Logged {
     Shuffleboard.getTab("Driver Info").add("Auto selector", autos.getSelector());
     autoAmpDisableSwitch =
         Shuffleboard.getTab("Driver Info")
-            .add("Disable Auto Amp", 0)
+            .add("Disable Auto Amp", false)
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
   }

@@ -66,6 +66,8 @@ public class AutoRoutines {
     paths.put("testIntake", PathPlannerPath.fromChoreoTrajectory("testIntake"));
     paths.put("far1", PathPlannerPath.fromChoreoTrajectory("far.1"));
     paths.put("far2", PathPlannerPath.fromChoreoTrajectory("far.2"));
+    paths.put("midFar", PathPlannerPath.fromChoreoTrajectory("midFar"));
+    paths.put("stageNear", PathPlannerPath.fromChoreoTrajectory("stageNear"));
   }
 
   // Add commands to PathPlanner in this form:
@@ -110,6 +112,7 @@ public class AutoRoutines {
                                     .followPathCommand(paths.get("fourNote3"), true)
                                     .alongWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot()))));
+
     routines.put(
         "fiveNote",
         flywheels
@@ -141,6 +144,7 @@ public class AutoRoutines {
                                     .followPathCommand(paths.get("fiveNote4"), true, true)
                                     .deadlineWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot()))));
+
     routines.put(
         "far",
         flywheels
@@ -162,6 +166,48 @@ public class AutoRoutines {
                                     .followPathCommand(paths.get("far2"), true)
                                     .deadlineWith(intakeShooterCommands.autoIntake()))
                             .andThen(intakeShooterCommands.autoShoot()))));
+
+    routines.put(
+        "midFar",
+        flywheels
+            .shootVoltage(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(
+                        intakeShooterCommands
+                            .autoShoot()
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("midFar"), true, true)
+                                    .deadlineWith(
+                                        Commands.waitSeconds(0.1)
+                                            .andThen(intakeShooterCommands.autoIntake())))
+                            .andThen(intakeShooterCommands.autoShoot()))));
+
+    routines.put(
+        "midFarAndStageNear",
+        flywheels
+            .shootVoltage(10)
+            .raceWith(
+                Commands.waitSeconds(0.5)
+                    .andThen(
+                        intakeShooterCommands
+                            .autoShoot()
+                            .andThen(
+                                swerve
+                                    .followPathCommand(paths.get("midFar"), true, true)
+                                    .deadlineWith(
+                                        Commands.waitSeconds(0.1)
+                                            .andThen(intakeShooterCommands.autoIntake())))
+                            .andThen(intakeShooterCommands.autoShoot()))
+                    .andThen(
+                        swerve
+                            .followPathCommand(paths.get("stageNear"), true, true)
+                            .deadlineWith(
+                                Commands.waitSeconds(0.1)
+                                    .andThen(intakeShooterCommands.autoIntake())))
+                    .andThen(intakeShooterCommands.autoShoot())));
+
     routines.put(
         "test",
         swerve

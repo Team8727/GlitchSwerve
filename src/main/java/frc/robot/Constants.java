@@ -317,8 +317,8 @@ public class Constants {
       public static double maxAccel = 37;
 
       // Encoder
-      public static int portA = 3;
-      public static int portB = 2;
+      public static int portA = 9;
+      public static int portB = 8;
       public static double pulsesPerRevolution = 2048;
       public static final double encoderOffset = Math.PI; // TUNE THIS
       public static final double cogOffset = -0.4;
